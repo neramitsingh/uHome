@@ -9,7 +9,7 @@ app.use(express.json());
 
 const skillBuilder = Alexa.SkillBuilders.custom();
 const skill = skillBuilder.create();
-const adapter = new ExpressAdapter(skill, true, true);
+//const adapter = new ExpressAdapter(skill, true, true);
 
 //app.post('/', adapter.getRequestHandlers());
 
