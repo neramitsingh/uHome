@@ -2,13 +2,13 @@ const express = require('express')
 const mongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const url = "mongodb://localhost:27017/";
-const { ExpressAdapter } = require('ask-sdk-express-adapter');
+//const { ExpressAdapter } = require('ask-sdk-express-adapter');
 
 const app = express();
 app.use(express.json());
 
-const skillBuilder = Alexa.SkillBuilders.custom();
-const skill = skillBuilder.create();
+// const skillBuilder = Alexa.SkillBuilders.custom();
+// const skill = skillBuilder.create();
 //const adapter = new ExpressAdapter(skill, true, true);
 
 //app.post('/', adapter.getRequestHandlers());
