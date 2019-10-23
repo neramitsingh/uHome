@@ -1,8 +1,16 @@
 const express = require('express')
-const mongoClient = require("mongodb").MongoClient;
+const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
-const url = "mongodb://localhost:27017/";
+//const url = "mongodb://localhost:27017/";
 //const { ExpressAdapter } = require('ask-sdk-express-adapter');
+const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true });
+client.connect(err => {
+  const collection = client.db("test").collection("devices");
+  // perform actions on the collection object
+  client.close();
+});
+
 
 const app = express();
 app.use(express.json());
@@ -26,7 +34,7 @@ app.post('/api/device',(req,res)=>{
         status: "connected"
     };
 
-    mongoClient.connect(url, {
+    MongoClient.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     }, (err, client) => {
@@ -49,7 +57,7 @@ app.post('/api/device',(req,res)=>{
 });
 
 app.get('/api/device/:id',(req,res)=>{
-  mongoClient.connect(url, {
+  MongoClient.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   }, (err, client) => {
@@ -72,4 +80,4 @@ app.get('/api/device/:id',(req,res)=>{
 
 app.listen(3000, () => {
   console.log('Listening on port 3000!')
-});
+}); 
