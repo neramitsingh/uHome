@@ -11,46 +11,53 @@ const authen = require('./authen')
 
 // Firebase App (the core Firebase SDK) is always required and
 // must be listed before other Firebase SDKs
-var firebase = require("firebase/app");
+// var firebase = require("firebase/app");
 
-// Add the Firebase products that you want to use
-require("firebase/auth");
-require("firebase/firestore");
+// // Add the Firebase products that you want to use
+// require("firebase/auth");
+// require("firebase/firestore");
 
 
-  // Your web app's Firebase configuration
+//   // Your web app's Firebase configuration
 
-  var firebaseConfig = {
-    apiKey: "AIzaSyBWUtbxKBnglyCxYFAAbMpeyQNuSt6Hgp8",
-    authDomain: "uhome-bd34e.firebaseapp.com",
-    databaseURL: "https://uhome-bd34e.firebaseio.com",
-    projectId: "uhome-bd34e",
-    storageBucket: "uhome-bd34e.appspot.com",
-    messagingSenderId: "514062511683",
-    appId: "1:514062511683:web:b5f42933a08e60b401aef6",
-    measurementId: "G-JFF1W2HXSX"
-  };
+//   var firebaseConfig = {
+//     apiKey: "AIzaSyBWUtbxKBnglyCxYFAAbMpeyQNuSt6Hgp8",
+//     authDomain: "uhome-bd34e.firebaseapp.com",
+//     databaseURL: "https://uhome-bd34e.firebaseio.com",
+//     projectId: "uhome-bd34e",
+//     storageBucket: "uhome-bd34e.appspot.com",
+//     messagingSenderId: "514062511683",
+//     appId: "1:514062511683:web:b5f42933a08e60b401aef6",
+//     measurementId: "G-JFF1W2HXSX"
+//   };
   
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
+//   // Initialize Firebase
+//   firebase.initializeApp(firebaseConfig);
 
 
 
 
 app.post('/', (req, res) => {
-var auth = authen.isAuthenticated(req.body.idToken)
-if(auth)
+var auth =  authen(req.body.idToken)
+console.log(auth)
+if(auth.isAuth)
 {
+  //console.log(auth)
   res.send('uHome')
 }
-else res.status(401).send("Authentication error")
-  
+else 
+{
+  res.status(401).send(auth.error)
+}
 });
 
 app.post('/api/device',(req,res)=>{
-    
+
+  var auth = authen.isAuthenticated(req.body.idToken)
+  if(auth)
+  {
     const device = {
-        uid: 1,
+        uid: auth,
         name: req.body.name,
         status: "connected"
     };
@@ -72,8 +79,9 @@ app.post('/api/device',(req,res)=>{
 
     client.close();
     
-  })
-    
+    })
+  }
+  else res.status(401).send({error: "Authentication error"})
 
 });
 
@@ -88,11 +96,12 @@ app.get('/api/device/:id',(req,res)=>{
   }
   const db = client.db(dbname)
   const collection = db.collection("devices")
+  let id = parseInt(req.params.id);
   //res.send(req.params.id)
   collection.find({uid: id}).toArray((err, items) => {
     if(err) res.send(err)
     else res.send(items)
-    let id = parseInt(req.params.id);
+    
   })
   client.close();
 })
