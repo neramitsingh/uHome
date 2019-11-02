@@ -38,18 +38,15 @@ const authen = require('./authen')
 
 
 app.post('/', (req, res) => {
-var auth =  authen(req.body.idToken)
-console.log(auth)
-if(auth.isAuth)
-{
-  //console.log(auth)
+var auth =  authen(req.body.idToken).then(async function(){
   res.send('uHome')
-}
-else 
-{
-  res.status(401).send(auth.error)
-}
+}).catch(function(reject){
+  // console.log(reject)
+  // console.log("I'm back catch")
+  res.status(401).send(reject.error)
 });
+})
+
 
 app.post('/api/device',(req,res)=>{
 
@@ -99,7 +96,7 @@ app.get('/api/device/:id',(req,res)=>{
   let id = parseInt(req.params.id);
   //res.send(req.params.id)
   collection.find({uid: id}).toArray((err, items) => {
-    if(err) res.send(err)
+    if(err) res.send(err)   
     else res.send(items)
     
   })

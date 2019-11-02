@@ -10,34 +10,34 @@ admin.initializeApp({
 
 
 function isAuthenticated(idToken){
-  // idToken comes from the client app
-  if(idToken == "1111") return {
-      isAuth: true,
-      uid: "EB6X0LuqSeXMkzM17ystWWneIu32"
+  return new Promise((resolve, reject) => {
+  
+     // idToken comes from the client app
+  // if(idToken == "1111") return {
+  //   isAuth: true,
+  //   uid: "EB6X0LuqSeXMkzM17ystWWneIu32"
+  // }
+admin.auth().verifyIdToken(idToken)
+.then(function(decodedToken) {
+  let uid = decodedToken.uid;
+  let obj = {
+    isAuth: true,
+    uid: uid
+  }
+  resolve(obj);
+}).catch(function(error) {
+  //console.log(error)
+  let obj = {
+    isAuth: false,
+    error: {
+      error: error
     }
-  admin.auth().verifyIdToken(idToken)
-  .then(function(decodedToken) {
-    let uid = decodedToken.uid;
-    // let obj = {
-    //   isAuth: true,
-    //   uid: uid
-    // }
-    // JSON.stringify(obj)
-    // return obj
-    return "ass"
-  }).catch(function(error) {
-    console.log(error)
-    // let obj = {
-    //   isAuth: false,
-    //   error: error
-    // }
-    //JSON.stringify(obj)
-    return {
-        isAuth: false,
-        error: error
-      }
-    //return false
-  });
+  }
+  reject(obj);
+});
+
+  })
+ 
         
 }
 
