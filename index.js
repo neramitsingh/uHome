@@ -4,6 +4,7 @@ const dbname = "uHomeDB"
 //const url = "mongodb://localhost:27017/";
 //const { ExpressAdapter } = require('ask-sdk-express-adapter');
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
+const ObjectId = require('mongodb').ObjectID;
 const app = express();
 app.use(express.json());
 
@@ -38,8 +39,24 @@ const authen = require('./authen')
 
 
 app.post('/', (req, res) => {
-var auth =  authen(req.body.idToken).then(async function(){
-  res.send('uHome')
+var auth =  authen(req.body.idToken).then(async function(resolve){
+  console.log(resolve)
+  // this example takes 2 seconds to run
+var start = Date.now();
+
+console.log("starting timer...");
+// expected output: starting timer...
+
+setTimeout(function() {
+  var millis = Date.now() - start;
+
+  console.log("seconds elapsed = " + Math.floor(millis/1000));
+  res.send({
+    text: 'uHome'
+  })
+  // expected output : seconds elapsed = 2
+}, 10000);
+  
 }).catch(function(reject){
   // console.log(reject)
   // console.log("I'm back catch")
@@ -50,35 +67,40 @@ var auth =  authen(req.body.idToken).then(async function(){
 
 app.post('/api/device',(req,res)=>{
 
-  var auth = authen.isAuthenticated(req.body.idToken)
-  if(auth)
-  {
-    const device = {
-        uid: auth,
-        name: req.body.name,
-        status: "connected"
-    };
-
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-    if (err) {
-      console.error(err)
-      return
-    }
-    const db = client.db(dbname)
-    const collection = db.collection("devices")
-    collection.insertOne(device, (err, result) => {
-      if(err) res.send(err)
-      else res.send(device)
-    })
-
-    client.close();
+  var auth =  authen(req.body.idToken).then(async function(resolve){
     
+    const device = {
+      uid: resolve.uid,
+      name: req.body.name,
+      status: "enabled",
+      switch: "on"
+  }
+  MongoClient.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }, (err, client) => {
+  if (err) {
+    console.error(err)
+    res.send({
+      error: err
     })
   }
-  else res.status(401).send({error: "Authentication error"})
+  const db = client.db(dbname)
+  const collection = db.collection("devices")
+  collection.insertOne(device, (err, result) => {
+    if(err) res.send(err)
+    else res.send(device)
+  })
+
+  client.close();
+  
+  })
+
+  }).catch(function(reject){
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
 
 });
 
@@ -91,56 +113,182 @@ app.get('/api/device/:id',(req,res)=>{
     console.error(err)
     return
   }
+  console.log('Test API')
   const db = client.db(dbname)
   const collection = db.collection("devices")
   let id = parseInt(req.params.id);
   //res.send(req.params.id)
   collection.find({uid: id}).toArray((err, items) => {
     if(err) res.send(err)   
-    else res.send(items)
-    
+    else res.send(items)  
   })
   client.close();
 })
 });
 
-// app.post('/api/signup',(req,res)=>{
+app.post('/api/toggleswitch', (req, res) => {
+  var auth =  authen(req.body.idToken).then(async function(resolve){
+    console.log(resolve)
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("devices")
 
-//   var email = req.body.email
-//   var password = req.body.password
-//   firebase.auth().createUserWithEmailAndPassword(email, password).catch(function(error) {
-//     // Handle Errors here.
-//     var errorCode = error.code;
-//     var errorMessage = error.message;
-//     var errorReply = {
-//       'errorCode': errorCode,
-//       'errorMessage' : errorMessage
+    var val;
 
-//     }
-//     res.send(errorReply)
-//   });
-//   res.send("Successfully created account")
+    var query1 = new Promise((resolve,reject)=> {
+      console.log("### Query 1 ###")
+      collection.find(ObjectId(req.body.did)).toArray(function(err, result) {
+        if (err) reject(err);
+        console.log(result);
+        val = result[0].switch;
+        resolve(result);
+        
+       })
+      })
 
-// });
+       var query2 = () =>{
+        return query1.then(async function(resolve){
+          console.log("### Query 2 ###")
+          if(val == "on") val = "off";
+          else if(val == "off") val = "on";
+  
+          var newvalues = { $set: { switch: val } };
+  
+          collection.updateOne({_id: ObjectId(req.body.did)}, newvalues, function(err, result) {
+            if (err){
+              console.log(err)
+              return res.send(err);
+            } 
+            console.log(result);
+            res.send(result);
+            client.close();
+          });
+    }).catch(function(reject){
+      res.send(reject.err)
+    })
+  }
+  
+  query2();
 
-// app.post('/api/signin',(req,res)=>{
 
-//   var email = req.body.email
-//   var password = req.body.password
-//   firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
-//     // Handle Errors here.
-//     var errorCode = error.code;
-//     var errorMessage = error.message;
-//     var errorReply = {
-//       'errorCode': errorCode,
-//       'errorMessage' : errorMessage
+      
 
-//     }
-//     res.send(errorReply)
-//   });
-//   res.send("Successfully Signed in")
+    //console.log(val.switch);
 
-// });
+    
+   // client.close();
+  })
+
+  }).catch(function(reject){
+    res.status(401).send(reject.error)
+  });
+  })
+
+  app.post('/api/starttimer',(req,res)=>{
+
+    var auth =  authen(req.body.idToken).then(async function(resolve){
+      
+      const timer = {
+        uid: resolve.uid,
+        time: Date.now(),
+        current: true,
+    }
+    let id = resolve.uid
+    let objectid;
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+    if (err) {
+      console.error(err)
+      res.send({
+        error: err
+      })
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("timer")
+    collection.insertOne(timer, (err, result) => {
+      if(err) res.send(err)
+      else{
+        objectid = timer._id
+        res.send(timer)
+
+        setTimeout(function(timer) {
+          console.log('starting')
+          collection.find(ObjectId(objectid)).toArray((err, items) => {
+            if(err) console.log(err)   
+            else{
+              let current = items[0].current;
+              console.log(current)
+              if(current === true){
+                console.log('Danger')
+              }
+              else console.log('No Danger')
+            }  
+          })
+        }, 15000);
+
+      } 
+    })
+  
+    client.close();
+    })
+  
+    }).catch(function(reject){
+      // console.log(reject)
+      // console.log("I'm back catch")
+      res.status(401).send(reject.error)
+    });
+  });
+  
+  app.post('/api/stoptimer',(req,res)=>{
+
+    var auth =  authen(req.body.idToken).then(async function(resolve){
+      
+    let id = resolve.uid
+    let objectid = req.body._id;
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+    if (err) {
+      console.error(err)
+      res.send({
+        error: err
+      })
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("timer")
+
+    var newvalues = { $set: { current: false } };
+
+    collection.updateOne({_id: ObjectId(objectid)},newvalues, (err, result) => {
+      if(err) res.send(err)
+      else{
+        res.send({
+          status: "Timer stopped"
+        })
+
+      } 
+    })
+  
+    client.close();
+    })
+  
+    }).catch(function(reject){
+      // console.log(reject)
+      // console.log("I'm back catch")
+      res.status(401).send(reject.error)
+    });
+  });
+
 
 
 app.listen(3000, () => {
