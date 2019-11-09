@@ -41,21 +41,21 @@ const authen = require('./authen')
 app.post('/', (req, res) => {
 var auth =  authen(req.body.idToken).then(async function(resolve){
   console.log(resolve)
-  // this example takes 2 seconds to run
-var start = Date.now();
+//   // this example takes 2 seconds to run
+// var start = Date.now();
 
-console.log("starting timer...");
-// expected output: starting timer...
+// console.log("starting timer...");
+// // expected output: starting timer...
 
-setTimeout(function() {
-  var millis = Date.now() - start;
+// setTimeout(function() {
+//   var millis = Date.now() - start;
 
-  console.log("seconds elapsed = " + Math.floor(millis/1000));
+//   console.log("seconds elapsed = " + Math.floor(millis/1000));
   res.send({
     text: 'uHome'
   })
   // expected output : seconds elapsed = 2
-}, 10000);
+//}, 10000);
   
 }).catch(function(reject){
   // console.log(reject)
@@ -73,7 +73,7 @@ app.post('/api/device',(req,res)=>{
       uid: resolve.uid,
       name: req.body.name,
       status: "enabled",
-      switch: "on"
+      on: true
   }
   MongoClient.connect(uri, {
     useNewUrlParser: true,
@@ -116,7 +116,7 @@ app.get('/api/device/:id',(req,res)=>{
   console.log('Test API')
   const db = client.db(dbname)
   const collection = db.collection("devices")
-  let id = parseInt(req.params.id);
+  let id = req.params.id
   //res.send(req.params.id)
   collection.find({uid: id}).toArray((err, items) => {
     if(err) res.send(err)   
@@ -147,7 +147,7 @@ app.post('/api/toggleswitch', (req, res) => {
       collection.find(ObjectId(req.body.did)).toArray(function(err, result) {
         if (err) reject(err);
         console.log(result);
-        val = result[0].switch;
+        val = result[0].on;
         resolve(result);
         
        })
@@ -156,10 +156,10 @@ app.post('/api/toggleswitch', (req, res) => {
        var query2 = () =>{
         return query1.then(async function(resolve){
           console.log("### Query 2 ###")
-          if(val == "on") val = "off";
-          else if(val == "off") val = "on";
+          if(val == true) val = false;
+          else if(val == false) val = true;
   
-          var newvalues = { $set: { switch: val } };
+          var newvalues = { $set: { on: val } };
   
           collection.updateOne({_id: ObjectId(req.body.did)}, newvalues, function(err, result) {
             if (err){
