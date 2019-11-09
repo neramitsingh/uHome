@@ -40,22 +40,10 @@ const authen = require('./authen')
 
 app.post('/', (req, res) => {
 var auth =  authen(req.body.idToken).then(async function(resolve){
-  console.log(resolve)
-//   // this example takes 2 seconds to run
-// var start = Date.now();
-
-// console.log("starting timer...");
-// // expected output: starting timer...
-
-// setTimeout(function() {
-//   var millis = Date.now() - start;
-
-//   console.log("seconds elapsed = " + Math.floor(millis/1000));
+  //console.log(resolve)
   res.send({
     text: 'uHome'
   })
-  // expected output : seconds elapsed = 2
-//}, 10000);
   
 }).catch(function(reject){
   // console.log(reject)
@@ -65,7 +53,7 @@ var auth =  authen(req.body.idToken).then(async function(resolve){
 })
 
 
-app.post('/api/device',(req,res)=>{
+app.post('/api/device/add',(req,res)=>{
 
   var auth =  authen(req.body.idToken).then(async function(resolve){
     
@@ -102,6 +90,37 @@ app.post('/api/device',(req,res)=>{
     res.status(401).send(reject.error)
   });
 
+});
+
+app.post('/api/device/get',(req,res)=>{
+
+  var auth =  authen(req.body.idToken).then(async function(resolve){
+    //console.log(resolve)
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+    if (err) {
+      console.error(err)
+      return
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("devices")
+    let id = resolve.uid
+    //res.send(req.params.id)
+    collection.find({uid: id}).toArray((err, items) => {
+      if(err) res.send(err)   
+      else res.send(items)  
+    })
+    client.close();
+  })
+    
+  }).catch(function(reject){
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+  
 });
 
 app.get('/api/device/:id',(req,res)=>{
