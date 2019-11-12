@@ -6,6 +6,9 @@ const dbname = "uHomeDB"
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
 const ObjectId = require('mongodb').ObjectID;
 const app = express();
+var cors = require('cors')
+
+app.use(cors())
 app.use(express.json());
 
 const authen = require('./authen')
