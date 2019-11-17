@@ -1,6 +1,9 @@
 const express = require('express')
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
+const hue = require('./hue')
+var randomstring = require("randomstring");
+
 //const url = "mongodb://localhost:27017/";
 //const { ExpressAdapter } = require('ask-sdk-express-adapter');
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
@@ -13,40 +16,31 @@ app.use(express.json());
 
 const authen = require('./authen')
 
-// Firebase App (the core Firebase SDK) is always required and
-// must be listed before other Firebase SDKs
-// var firebase = require("firebase/app");
 
-// // Add the Firebase products that you want to use
-// require("firebase/auth");
-// require("firebase/firestore");
-
-
-//   // Your web app's Firebase configuration
-
-//   var firebaseConfig = {
-//     apiKey: "AIzaSyBWUtbxKBnglyCxYFAAbMpeyQNuSt6Hgp8",
-//     authDomain: "uhome-bd34e.firebaseapp.com",
-//     databaseURL: "https://uhome-bd34e.firebaseio.com",
-//     projectId: "uhome-bd34e",
-//     storageBucket: "uhome-bd34e.appspot.com",
-//     messagingSenderId: "514062511683",
-//     appId: "1:514062511683:web:b5f42933a08e60b401aef6",
-//     measurementId: "G-JFF1W2HXSX"
-//   };
-  
-//   // Initialize Firebase
-//   firebase.initializeApp(firebaseConfig);
-
+//format
+// app.post('/', (req, res) => {
+//   var auth =  authen(req.body.idToken).then(async function(resolve){
+    
+//     
+    
+//   }).catch(function(reject){
+//     
+//     res.status(401).send(reject.error)
+//   });
+//   })
 
 
 
 app.post('/', (req, res) => {
 var auth =  authen(req.body.idToken).then(async function(resolve){
   //console.log(resolve)
-  res.send({
-    text: 'uHome'
+  var result = hue.addHueUser().then(function(resolve){
+    res.send(resolve)
+  
+  }).catch(function(reject){
+    res.send(reject)
   })
+  console.log(result)
   
 }).catch(function(reject){
   // console.log(reject)
@@ -56,7 +50,123 @@ var auth =  authen(req.body.idToken).then(async function(resolve){
 })
 
 
-app.post('/api/device/add',(req,res)=>{
+app.get('/callback', (req, res) => {
+  var code = req.query.code;
+  var state = req.query.state
+
+  var obj = {
+    "code" : code,
+    "state" : state
+  }
+
+  console.log(obj)
+
+  var auth =  authen(req.body.idToken).then(async function(resolve){
+
+    var uid = resolve.uid
+  
+    var result = hue.addHueUser(code).then(function(resolve){
+
+      MongoClient.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }, (err, client) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
+  
+      collection.insertOne(creds, (err, result) => {
+        if(err) res.send(err)
+        else res.send(result)
+      })
+    
+      client.close();
+      
+      })
+        res.send(resolve)
+      }).catch(function(reject){
+        res.send(reject)
+      })
+      console.log(result)
+        
+      }).catch(function(reject){
+        
+        res.status(401).send(reject.error)
+      });
+
+  
+  })
+
+
+  app.get('/switchLight', (req, res) => {
+
+    var LightId = req.body.LightId
+    var auth =  authen(req.body.idToken).then(async function(resolve){
+      
+      console.log(typeof(LightId))
+      var uid = resolve.uid
+
+      console.log(resolve)
+      MongoClient.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send(err)
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
+  
+      var val;
+  
+      var query1 = new Promise((resolve,reject)=> {
+        console.log("### Query 1 ###")
+        collection.findOne({uid: uid},(err,result) => {
+          if(err) {
+             reject(err);
+             console.log(err)
+          }
+          //console.log(result);
+          resolve(result);
+          
+         })
+
+         client.close();
+        })
+  
+         var run = () =>{
+          return query1.then(async function(resolve){
+
+            var access = resolve.tokens.access.value
+            , refresh = resolve.tokens.refresh.value
+            , username = resolve.username
+             hue.switchLight(access, refresh, username, LightId);
+            console.log(resolve)
+
+            res.send("done")
+      }).catch(function(reject){
+        res.send(reject.err)
+      })
+
+      
+    }
+    
+    run();
+    
+    })
+  
+    }).catch(function(reject){
+      res.status(401).send(reject.error)
+    });
+
+  })
+
+
+  app.post('/api/device/add',(req,res)=>{
 
   var auth =  authen(req.body.idToken).then(async function(resolve){
     
@@ -198,6 +308,7 @@ app.post('/api/toggleswitch', (req, res) => {
   }
   
   query2();
+  client.close();
 
 
       
