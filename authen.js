@@ -12,7 +12,7 @@ admin.initializeApp({
 function isAuthenticated(idToken){
   // idToken comes from the client app
   
-  
+ if(!idToken) idToken = "0"; 
 return new Promise((resolve, reject) => {
 admin.auth().verifyIdToken(idToken)
 .then(function(decodedToken) {
