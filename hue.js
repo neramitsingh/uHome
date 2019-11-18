@@ -23,9 +23,8 @@ const LightState = v3.lightStates.LightState;
 module.exports.addHueUser = function(authCode){
 // Replace this with your authorization code that you get from the Callback URL for your Hue Remote API Application.
 // If you do not fill this value in, the code will give you the URL to start the process for generating this value.
-//const authorizationCode = authCode;
-const authorizationCode = true;
-
+const authorizationCode = authCode;
+// const authorizationCode = null;
 
 const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
 
@@ -79,7 +78,7 @@ return new Promise((resolve, reject) => {
 
 }
 
-module.exports.switchLight = function(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId ){
+module.exports.switchLight = function(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME,expiresAt, LightId ){
 
 //   const ACCESS_TOKEN = 'O4WWOZK3Bk3Borm3eLP597YpaxJP'
 //   , REFRESH_TOKEN = '7OqKJb0WNiam55mqf7wuvaEdAC406PuX'
@@ -124,8 +123,8 @@ remoteBootstrap.connectWithTokens(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME)
       console.error(err);
     })
   });
+}
 
-
-
+function refreshToken(ACCESS_TOKEN, REFRESH_TOKEN, expiresAt){
 
 }

@@ -3,6 +3,7 @@ const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const hue = require('./hue')
 var randomstring = require("randomstring");
+const http = require('http'); 
 
 //const url = "mongodb://localhost:27017/";
 //const { ExpressAdapter } = require('ask-sdk-express-adapter');
@@ -47,6 +48,101 @@ app.post('/', (req, res) => {
     // console.log("I'm back catch")
     res.status(401).send(reject.error)
   });
+})
+
+app.get('/convert', (req, res) => {
+  function httpGet2() {
+    const data = JSON.stringify({
+    "idToken": "1111",
+	  "LightId": "4"
+  })
+    console.log("Light API started" + data + " Type: " + typeof(data))
+    return new Promise(((resolve, reject) => {
+    var options = {
+        host: 'localhost',
+        port: 3000,
+        path: '/switchLight',
+        method: 'POST',
+        json:{
+          "idToken": "1111",
+          "LightId": "4"
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+    
+    };
+    
+    // const request = http.request(options,
+    //  (response) => {
+    //   response.setEncoding('utf8');
+    //   console.log("Request sent")
+    //   let returnData = '';
+
+    //   response.on('data', (chunk) => {
+    //     returnData += chunk;
+    //   });
+
+    //   response.on('end', () => {
+    //     console.log(returnData || "Nothing here")
+    //     resolve(returnData);
+    //   });
+
+    //   response.on('error', (error) => {
+    //     reject(error);
+    //   });
+      
+    // });
+    // request.write(data);
+    // request.end();
+
+    // var req = http.request(options, function(res) {
+    //   console.log('STATUS: ' + res.statusCode);
+    //   console.log('HEADERS: ' + JSON.stringify(res.headers));
+    
+    //   // Buffer the body entirely for processing as a whole.
+    //   var bodyChunks = [];
+    //   res.on('data', function(chunk) {
+    //     // You can process streamed parts here...
+    //     bodyChunks.push(chunk);
+    //   }).on('end', function() {
+    //     var body = Buffer.concat(bodyChunks);
+    //     console.log('BODY: ' + body);
+    //     // ...and/or process the entire body here.
+    //   })
+    // });
+    
+    // req.on('error', function(e) {
+    //   console.log('ERROR: ' + e.message);
+    // });
+
+    // req.write(data);
+    // req.end();
+
+    var req = http.request(options, (res) => {
+      console.log('statusCode:', res.statusCode);
+      console.log('headers:', res.headers);
+    
+      res.on('data', (d) => {
+        process.stdout.write(d);
+      });
+    });
+    
+    req.on('error', (e) => {
+      console.error(e);
+    });
+    
+    req.write(data);
+    req.end();
+    
+  }));
+}
+async function run(){
+  var response = httpGet2();
+  console.log("################################# Response ##########################")
+  console.log(response)
+}
+run();
 })
 
 
@@ -101,8 +197,10 @@ app.get('/callback', (req, res) => {
 })
 
 
-app.get('/switchLight', (req, res) => {
+app.post('/switchLight', (req, res) => {
 
+  console.log("Body: ")
+  console.log(req.body)
   var LightId = req.body.LightId
   var auth = authen(req.body.idToken).then(async function (resolve) {
     console.log(typeof (LightId))
@@ -143,9 +241,12 @@ app.get('/switchLight', (req, res) => {
           var access = resolve.tokens.access.value
             , refresh = resolve.tokens.refresh.value
             , username = resolve.username
-          hue.switchLight(access, refresh, username, LightId);
+            , expire = resolve.tokens.refresh.expiresAt
+          hue.switchLight(access, refresh, username, expire, LightId);
           console.log(resolve)
-          res.send("done")
+          res.send({
+            "message": "toggle activated"
+          })
         }).catch(function (reject) {
           res.send(reject.err)
         })
