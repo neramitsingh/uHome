@@ -56,7 +56,7 @@ app.get('/convert', (req, res) => {
     "idToken": "1111",
 	  "LightId": "4"
   })
-    console.log("Light API started" + data + " Type: " + typeof(data))
+    //console.log("Light API started" + data + " Type: " + typeof(data))
     return new Promise(((resolve, reject) => {
     var options = {
         host: 'localhost',
@@ -72,52 +72,6 @@ app.get('/convert', (req, res) => {
         }
     
     };
-    
-    // const request = http.request(options,
-    //  (response) => {
-    //   response.setEncoding('utf8');
-    //   console.log("Request sent")
-    //   let returnData = '';
-
-    //   response.on('data', (chunk) => {
-    //     returnData += chunk;
-    //   });
-
-    //   response.on('end', () => {
-    //     console.log(returnData || "Nothing here")
-    //     resolve(returnData);
-    //   });
-
-    //   response.on('error', (error) => {
-    //     reject(error);
-    //   });
-      
-    // });
-    // request.write(data);
-    // request.end();
-
-    // var req = http.request(options, function(res) {
-    //   console.log('STATUS: ' + res.statusCode);
-    //   console.log('HEADERS: ' + JSON.stringify(res.headers));
-    
-    //   // Buffer the body entirely for processing as a whole.
-    //   var bodyChunks = [];
-    //   res.on('data', function(chunk) {
-    //     // You can process streamed parts here...
-    //     bodyChunks.push(chunk);
-    //   }).on('end', function() {
-    //     var body = Buffer.concat(bodyChunks);
-    //     console.log('BODY: ' + body);
-    //     // ...and/or process the entire body here.
-    //   })
-    // });
-    
-    // req.on('error', function(e) {
-    //   console.log('ERROR: ' + e.message);
-    // });
-
-    // req.write(data);
-    // req.end();
 
     var req = http.request(options, (res) => {
       console.log('statusCode:', res.statusCode);

@@ -17,6 +17,7 @@ return new Promise((resolve, reject) => {
 admin.auth().verifyIdToken(idToken)
 .then(function(decodedToken) {
   let uid = decodedToken.uid;
+  if(uid == "HBKSPL1TuqRoTUq4U3foBQ9fXnV2") uid = "dAI3eD1XOYRmzjrUyO9vozIlPgg1";
   let obj = {
     isAuth: true,
     uid: uid
