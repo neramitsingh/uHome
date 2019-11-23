@@ -370,6 +370,7 @@ app.post('/api/toggleswitch', (req, res) => {
 app.post('/api/starttimer', (req, res) => {
 
   var auth = authen(req.body.idToken).then(async function (resolve) {
+    console.log("-----------------------Starting Timer--------------------------")
 
     const timer = {
       uid: resolve.uid,
@@ -509,6 +510,45 @@ app.post('/api/setEnabled', (req, res) => {
   })
 
 
+  app.post('/api/device/delete', (req, res) => {
+
+  var deviceId = req.body._id
+  var auth =  authen(req.body.idToken).then(async function(resolve){
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("devices")
+
+
+      collection.deleteOne({ _id: ObjectId(deviceId) }, (err, result) => {
+        if (err) res.send(err)
+        else {
+          res.send({
+            "message": "Delete successful"
+          })
+
+        }
+      })
+
+      client.close();
+    })
+    
+    
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
 
 
 
