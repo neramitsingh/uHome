@@ -395,7 +395,7 @@ app.post('/api/starttimer', (req, res) => {
         if (err) res.send(err)
         else {
           objectid = timer._id
-          res.send(timer)
+          res.status(200).send(timer)
 
           setTimeout(function (timer) {
             console.log('starting')
