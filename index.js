@@ -153,14 +153,13 @@ app.get('/callback', (req, res) => {
 
 app.post('/switchLight', (req, res) => {
 
-  console.log("Body: ")
-  console.log(req.body)
+  // console.log("Body: ")
+  // console.log(req.body)
   var LightId = req.body.LightId
   var auth = authen(req.body.idToken).then(async function (resolve) {
-    console.log(typeof (LightId))
     var uid = resolve.uid
 
-    console.log(resolve)
+    //console.log(resolve)
     MongoClient.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -196,10 +195,11 @@ app.post('/switchLight', (req, res) => {
             , refresh = resolve.tokens.refresh.value
             , username = resolve.username
             , expire = resolve.tokens.refresh.expiresAt
-          hue.switchLight(access, refresh, username, expire, LightId);
-          console.log(resolve)
+          var state = await hue.switchLight(access, refresh, username, LightId);
+          //console.log(resolve)
           res.send({
-            "message": "toggle activated"
+            "message": "toggle activated",
+            "current_state": state
           })
         }).catch(function (reject) {
           res.send(reject.err)
@@ -225,7 +225,7 @@ app.post('/api/device/add', (req, res) => {
     const device = {
       uid: resolve.uid,
       name: req.body.name,
-      status: "enabled",
+      enabled: true,
       on: true
     }
     MongoClient.connect(uri, {
@@ -312,7 +312,6 @@ app.get('/api/device/:id', (req, res) => {
 
 app.post('/api/toggleswitch', (req, res) => {
   var auth = authen(req.body.idToken).then(async function (resolve) {
-    console.log(resolve)
     MongoClient.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -410,7 +409,7 @@ app.post('/api/starttimer', (req, res) => {
                 else console.log('No Danger')
               }
             })
-          }, 15000);
+          }, 36000);
 
         }
       })
@@ -466,8 +465,109 @@ app.post('/api/stoptimer', (req, res) => {
   });
 });
 
+app.post('/api/setEnabled', (req, res) => {
+
+  var deviceId = req.body._id
+  var toSetEnabled = re.body.enabled
+  var auth =  authen(req.body.idToken).then(async function(resolve){
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("devices")
+
+      var newvalues = { $set: { enabled: toSetEnabled } };
+
+      collection.updateOne({ _id: ObjectId(deviceId) }, newvalues, (err, result) => {
+        if (err) res.send(err)
+        else {
+          res.send({
+            "_id": deviceId,
+            "enabled": toSetEnabled
+          })
+
+        }
+      })
+
+      client.close();
+    })
+    
+    
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
+
+
+
+
 
 
 app.listen(3000, () => {
   console.log('Listening on port 3000!')
-}); 
+});
+
+module.exports.updateHueToken = function (data, UID){
+
+  MongoClient.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }, (err, client) => {
+    if (err) {
+      console.error(err)
+      res.send({
+        error: err
+      })
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("HueCred")
+
+    var query1 = new Promise((resolve, reject) => {
+      console.log("### Query 1 ###")
+      collection.deleteOne({uid: UID},function (err, result) {
+        if (err) reject(err);
+        console.log(result);
+        val = result[0].on;
+        resolve(result);
+
+      })
+    })
+
+    var query2 = () => {
+      return query1.then(async function (resolve) {
+        console.log("### Query 2 ###")
+        if (val == true) val = false;
+        else if (val == false) val = true;
+
+        var newvalues = { $set: { on: val } };
+
+        collection.updateOne({ _id: ObjectId(req.body.did) }, newvalues, function (err, result) {
+          if (err) {
+            console.log(err)
+            return res.send(err);
+          }
+          console.log(result);
+          res.send(result);
+          client.close();
+        });
+      }).catch(function (reject) {
+        res.send(reject.err)
+      })
+    }
+
+    query2();
+    client.close();
+  })
+
+}
+
