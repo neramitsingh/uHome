@@ -468,7 +468,7 @@ app.post('/api/stoptimer', (req, res) => {
 app.post('/api/setEnabled', (req, res) => {
 
   var deviceId = req.body._id
-  var toSetEnabled = re.body.enabled
+  var toSetEnabled = req.body.enabled
   var auth =  authen(req.body.idToken).then(async function(resolve){
 
     MongoClient.connect(uri, {
