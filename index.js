@@ -30,9 +30,16 @@ const authen = require('./authen')
 //   });
 //   })
 
+app.get('/status', (req, res) => {
+  
+  res.send({
+    "message": "Online"
+  })
+  
+  })
 
 
-app.post('/', (req, res) => {
+app.post('/api/addHueUser', (req, res) => {
   var auth = authen(req.body.idToken).then(async function (resolve) {
     //console.log(resolve)
     var result = hue.addHueUser().then(function (resolve) {
@@ -113,7 +120,7 @@ app.get('/callback', (req, res) => {
 
   var auth = authen(req.body.idToken).then(async function (resolve) {
 
-    var uid = resolve.uid
+     var uid = resolve.uid
 
     var result = hue.addHueUser(code).then(function (resolve) {
 
