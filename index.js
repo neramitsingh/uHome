@@ -518,7 +518,7 @@ app.post('/api/setEnabled', (req, res) => {
   })
 
 
-  app.delete('/api/device/delete', (req, res) => {
+  app.post('/api/device/delete', (req, res) => {
 
   var deviceId = req.body._id
   var auth =  authen(req.body.idToken).then(async function(resolve){
