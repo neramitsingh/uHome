@@ -107,7 +107,7 @@ run();
 })
 
 
-app.get('/callback', (req, res) => {
+app.get('/api/addHueUser/callback', (req, res) => {
   var code = req.query.code;
   var state = req.query.state
 
