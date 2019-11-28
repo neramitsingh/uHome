@@ -108,8 +108,8 @@ run();
 
 
 app.get('/api/addHueUser/callback', (req, res) => {
-  var code = req.query.code;
-  var state = req.query.state
+  var code = req.body.code;
+  var state = req.body.state
 
   var obj = {
     "code": code,
