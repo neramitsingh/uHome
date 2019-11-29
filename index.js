@@ -123,6 +123,7 @@ app.post('/api/addHueUser/callback', (req, res) => {
      var uid = resolve.uid
 
     var resultcred = await hue.addHueUser(code).then(function (resolve) {
+      resultcred.uid = uid
 
       MongoClient.connect(uri, {
         useNewUrlParser: true,
