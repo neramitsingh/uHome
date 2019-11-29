@@ -295,7 +295,7 @@ app.post('/api/device/get', (req, res) => {
 
 });
 
-console.error(err)
+//console.error(err)
 app.get('/api/device/:id', (req, res) => {
   MongoClient.connect(uri, {
     useNewUrlParser: true,
