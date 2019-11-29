@@ -122,7 +122,7 @@ app.post('/api/addHueUser/callback', (req, res) => {
 
      var uid = resolve.uid
 
-    var result = hue.addHueUser(code).then(function (resolve) {
+    var resultcred = hue.addHueUser(code).then(function (resolve) {
 
       MongoClient.connect(uri, {
         useNewUrlParser: true,
@@ -135,7 +135,7 @@ app.post('/api/addHueUser/callback', (req, res) => {
         const db = client.db(dbname)
         const collection = db.collection("HueCred")
 
-        collection.insertOne(creds, (err, result) => {
+        collection.insertOne(resultcred, (err, result) => {
           if (err) res.send(err)
           else res.send(result)
         })
@@ -295,13 +295,13 @@ app.post('/api/device/get', (req, res) => {
 
 });
 
+console.error(err)
 app.get('/api/device/:id', (req, res) => {
   MongoClient.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   }, (err, client) => {
     if (err) {
-      console.error(err)
       return
     }
     console.log('Test API')
