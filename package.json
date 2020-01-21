@@ -14,6 +14,7 @@
     "firebase": "^7.2.1",
     "firebase-admin": "^8.6.1",
     "mongodb": "^3.3.2",
+    "mysql": "^2.17.1",
     "node-gcm": "^1.0.2",
     "node-hue-api": "^3.4.0",
     "nodemon": "^1.19.2",
