@@ -2,22 +2,25 @@ const express = require('express')
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const hue = require('./hue')
-var randomstring = require("randomstring");
 const http = require('http');
 const mysql = require('mysql');
+const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
+const ObjectId = require('mongodb').ObjectID;
+const app = express();
+const cors = require('cors')
+const authen = require('./authen')
+
+var randomstring = require("randomstring");
 
 
 //const url = "mongodb://localhost:27017/";
 //const { ExpressAdapter } = require('ask-sdk-express-adapter');
-const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
-const ObjectId = require('mongodb').ObjectID;
-const app = express();
-var cors = require('cors')
+
 
 app.use(cors())
 app.use(express.json());
 
-const authen = require('./authen')
+
 
 
 //format
@@ -55,6 +58,10 @@ app.get('/status', (req, res) => {
 
 })
 
+
+//##### User Part #####
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 app.post('/checkAdmin', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
@@ -78,7 +85,7 @@ app.post('/checkAdmin', (req, res) => {
         })
         //console.log(result);
         // Check whether user exists or not
-        if (result.length == 0) {
+        if (result.length == 0) { //User does not exist in DB
           var sql = `INSERT INTO admin (UserID) VALUES ('${resolve.uid}')`;
           await con.query(sql, function (err, result) {
             if (err) res.send({
@@ -86,7 +93,8 @@ app.post('/checkAdmin', (req, res) => {
             })
             else
               res.send({
-                "message": "1 record inserted"
+                "message": "1 record inserted",
+                "admin": true
               })
             // var AdminID = result.insertId;
             // console.log(result);
@@ -198,7 +206,7 @@ app.post('/user/addtoHome', (req, res) => {
 
       var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${uid}")`;
 
-      await con.query(sql, function (err, result) {
+      con.query(sql, function (err, result) {
         if (err) res.send({
           "message": err
         })
@@ -215,6 +223,282 @@ app.post('/user/addtoHome', (req, res) => {
     res.status(401).send(reject.error)
   });
 })
+
+//Get list of homes to display for User
+app.post('/user/getHome', (req, res) => {
+
+
+var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+
+  var con = mysql.createConnection({
+    host: "127.0.0.1",
+    user: "root",
+    password: "",
+    database: "uhomesql"
+  });
+
+  con.connect(async function (err) {
+    if (err) res.send({
+      "message": err
+    })
+
+    var sql = `SELECT home_user.HomeID, home.Name from home_user INNER JOIN home ON home.HomeID = home_user.HomeID WHERE home_user.UserID = '${resolve.uid}'`
+
+    con.query(sql, function (err, result) {
+      if (err) res.send({
+        "message": err
+      })
+      else
+        res.send({
+          "message": result
+        })
+    })
+
+});
+}).catch(function (reject) {
+
+  res.status(401).send(reject.error)
+});
+})
+
+//Get list of homes to display for Admin
+app.post('/admin/getHome', (req, res) => {
+
+  var adminID = req.body.adminID
+  
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+  
+  
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+  
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+  
+      var sql = `SELECT HomeID, Name FROM home WHERE AdminID = '${adminID}' `
+  
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        else
+          res.send({
+            "message": result
+          })
+      })
+  
+  });
+  }).catch(function (reject) {
+  
+  res.status(401).send(reject.error)
+  });
+  })
+
+
+  //Get Room (Both Admin & User)
+app.post('/getRoom', (req, res) => {
+  
+  var homeID = req.body.homeID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+  
+  
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+  
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+  
+      var sql = `SELECT RoomID, Name, Type FROM room WHERE HomeID = '${homeID}' `
+  
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        else
+          res.send({
+            "message": result
+          })
+      })
+  
+  });
+  }).catch(function (reject) {
+  
+  res.status(401).send(reject.error)
+  });
+  })
+
+   //Admin add Room to Home
+app.post('/admin/addRoom', (req, res) => {
+  
+  var homeID = req.body.homeID
+  var name = req.body.name
+  var type = req.body.type
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+  
+  
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+  
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+  
+      var sql = `INSERT INTO room (HomeID, Name, Type) VALUES ('${homeID}',"${name}","${type}") `
+  
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        else
+          res.send({
+            "message": "1 record inserted"
+          })
+      })
+  
+  });
+  }).catch(function (reject) {
+  
+  res.status(401).send(reject.error)
+  });
+  })
+
+
+
+  //##### Timer #####
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+app.post('/api/starttimer', (req, res) => {
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    console.log("-----------------------Starting Timer--------------------------")
+
+    const timer = {
+      uid: resolve.uid,
+      time: Date.now(),
+      current: true,
+    }
+    let id = resolve.uid
+    let objectid;
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("timer")
+      collection.insertOne(timer, (err, result) => {
+        if (err) res.send(err)
+        else {
+          objectid = timer._id
+          timer.time = timer.time.toString()
+          res.status(200).send(timer)
+
+          setTimeout(function (timer) {
+            console.log('starting')
+            collection.find(ObjectId(objectid)).toArray((err, items) => {
+              if (err) console.log(err)
+              else {
+                let current = items[0].current;
+                console.log(current)
+                if (current === true) {
+                  console.log('Danger')
+                } else console.log('No Danger')
+              }
+            })
+          }, 36000); //Time in ms
+
+        }
+      })
+
+      client.close();
+    })
+
+  }).catch(function (reject) {
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+});
+
+app.post('/api/stoptimer', (req, res) => {
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    let id = resolve.uid
+    let objectid = req.body._id;
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("timer")
+
+      var newvalues = {
+        $set: {
+          current: false
+        }
+      };
+
+      collection.updateOne({
+        _id: ObjectId(objectid)
+      }, newvalues, (err, result) => {
+        if (err) res.send(err)
+        else {
+          res.send({
+            status: "Timer stopped"
+          })
+
+        }
+      })
+
+      client.close();
+    })
+
+  }).catch(function (reject) {
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+});
+
+
+
+
+
+
+//Below this line needs revision
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -570,110 +854,7 @@ app.post('/api/toggleswitch', (req, res) => {
   });
 })
 
-app.post('/api/starttimer', (req, res) => {
 
-  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-    console.log("-----------------------Starting Timer--------------------------")
-
-    const timer = {
-      uid: resolve.uid,
-      time: Date.now(),
-      current: true,
-    }
-    let id = resolve.uid
-    let objectid;
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        res.send({
-          error: err
-        })
-      }
-      const db = client.db(dbname)
-      const collection = db.collection("timer")
-      collection.insertOne(timer, (err, result) => {
-        if (err) res.send(err)
-        else {
-          objectid = timer._id
-          timer.time = timer.time.toString()
-          res.status(200).send(timer)
-
-          setTimeout(function (timer) {
-            console.log('starting')
-            collection.find(ObjectId(objectid)).toArray((err, items) => {
-              if (err) console.log(err)
-              else {
-                let current = items[0].current;
-                console.log(current)
-                if (current === true) {
-                  console.log('Danger')
-                } else console.log('No Danger')
-              }
-            })
-          }, 36000);
-
-        }
-      })
-
-      client.close();
-    })
-
-  }).catch(function (reject) {
-    // console.log(reject)
-    // console.log("I'm back catch")
-    res.status(401).send(reject.error)
-  });
-});
-
-app.post('/api/stoptimer', (req, res) => {
-
-  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-
-    let id = resolve.uid
-    let objectid = req.body._id;
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        res.send({
-          error: err
-        })
-      }
-      const db = client.db(dbname)
-      const collection = db.collection("timer")
-
-      var newvalues = {
-        $set: {
-          current: false
-        }
-      };
-
-      collection.updateOne({
-        _id: ObjectId(objectid)
-      }, newvalues, (err, result) => {
-        if (err) res.send(err)
-        else {
-          res.send({
-            status: "Timer stopped"
-          })
-
-        }
-      })
-
-      client.close();
-    })
-
-  }).catch(function (reject) {
-    // console.log(reject)
-    // console.log("I'm back catch")
-    res.status(401).send(reject.error)
-  });
-});
 
 app.post('/api/setEnabled', (req, res) => {
 
