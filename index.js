@@ -59,7 +59,7 @@ app.get('/status', (req, res) => {
 })
 
 
-//##### User Part #####
+//##### User and Home Management #####
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.post('/checkAdmin', (req, res) => {
@@ -147,7 +147,7 @@ app.post('/admin/addHome', (req, res) => {
 
           var sql = `INSERT INTO home (AdminID,Name) VALUES ('${adminID}',"${name}")`;
 
-          await con.query(sql, async function (err, result) {
+           con.query(sql, async function (err, result) {
             if (err) res.send({
               "message": err
             })
@@ -228,62 +228,62 @@ app.post('/user/addtoHome', (req, res) => {
 app.post('/user/getHome', (req, res) => {
 
 
-var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
 
-  var con = mysql.createConnection({
-    host: "127.0.0.1",
-    user: "root",
-    password: "",
-    database: "uhomesql"
-  });
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
 
-  con.connect(async function (err) {
-    if (err) res.send({
-      "message": err
-    })
-
-    var sql = `SELECT home_user.HomeID, home.Name from home_user INNER JOIN home ON home.HomeID = home_user.HomeID WHERE home_user.UserID = '${resolve.uid}'`
-
-    con.query(sql, function (err, result) {
+    con.connect(async function (err) {
       if (err) res.send({
         "message": err
       })
-      else
-        res.send({
-          "message": result
+
+      var sql = `SELECT home_user.HomeID, home.Name from home_user INNER JOIN home ON home.HomeID = home_user.HomeID WHERE home_user.UserID = '${resolve.uid}'`
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
         })
-    })
+        else
+          res.send({
+            "message": result
+          })
+      })
 
-});
-}).catch(function (reject) {
+    });
+  }).catch(function (reject) {
 
-  res.status(401).send(reject.error)
-});
+    res.status(401).send(reject.error)
+  });
 })
 
 //Get list of homes to display for Admin
 app.post('/admin/getHome', (req, res) => {
 
   var adminID = req.body.adminID
-  
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-  
-  
+
+
     var con = mysql.createConnection({
       host: "127.0.0.1",
       user: "root",
       password: "",
       database: "uhomesql"
     });
-  
+
     con.connect(async function (err) {
       if (err) res.send({
         "message": err
       })
-  
+
       var sql = `SELECT HomeID, Name FROM home WHERE AdminID = '${adminID}' `
-  
+
       con.query(sql, function (err, result) {
         if (err) res.send({
           "message": err
@@ -293,37 +293,37 @@ app.post('/admin/getHome', (req, res) => {
             "message": result
           })
       })
-  
-  });
+
+    });
   }).catch(function (reject) {
-  
-  res.status(401).send(reject.error)
+
+    res.status(401).send(reject.error)
   });
-  })
+})
 
 
-  //Get Room (Both Admin & User)
+//Get Room (Both Admin & User)
 app.post('/getRoom', (req, res) => {
-  
+
   var homeID = req.body.homeID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-  
-  
+
+
     var con = mysql.createConnection({
       host: "127.0.0.1",
       user: "root",
       password: "",
       database: "uhomesql"
     });
-  
+
     con.connect(async function (err) {
       if (err) res.send({
         "message": err
       })
-  
+
       var sql = `SELECT RoomID, Name, Type FROM room WHERE HomeID = '${homeID}' `
-  
+
       con.query(sql, function (err, result) {
         if (err) res.send({
           "message": err
@@ -333,38 +333,38 @@ app.post('/getRoom', (req, res) => {
             "message": result
           })
       })
-  
-  });
-  }).catch(function (reject) {
-  
-  res.status(401).send(reject.error)
-  });
-  })
 
-   //Admin add Room to Home
+    });
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+//Admin add Room to Home
 app.post('/admin/addRoom', (req, res) => {
-  
+
   var homeID = req.body.homeID
   var name = req.body.name
   var type = req.body.type
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-  
-  
+
+
     var con = mysql.createConnection({
       host: "127.0.0.1",
       user: "root",
       password: "",
       database: "uhomesql"
     });
-  
+
     con.connect(async function (err) {
       if (err) res.send({
         "message": err
       })
-  
+
       var sql = `INSERT INTO room (HomeID, Name, Type) VALUES ('${homeID}',"${name}","${type}") `
-  
+
       con.query(sql, function (err, result) {
         if (err) res.send({
           "message": err
@@ -374,17 +374,19 @@ app.post('/admin/addRoom', (req, res) => {
             "message": "1 record inserted"
           })
       })
-  
-  });
+
+    });
   }).catch(function (reject) {
-  
-  res.status(401).send(reject.error)
+
+    res.status(401).send(reject.error)
   });
-  })
+})
 
 
 
-  //##### Timer #####
+
+
+//##### Timer #####
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 app.post('/api/starttimer', (req, res) => {
@@ -498,7 +500,7 @@ app.post('/api/stoptimer', (req, res) => {
 
 
 //Below this line needs revision
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
