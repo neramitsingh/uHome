@@ -157,13 +157,14 @@ app.post('/admin/addHome', (req, res) => {
 
               var sql2 = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve.uid}")`;
 
-              await con.query(sql2, function (err, result) {
+               con.query(sql2, function (err, result) {
                 if (err) res.send({
                   "message": err
                 })
                 else
                   res.send({
-                    "message": "1 record inserted"
+                    "message": result,
+                    "HomeID": homeID
                   })
               })
             }
