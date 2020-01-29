@@ -94,7 +94,8 @@ app.post('/checkAdmin', (req, res) => {
             else
               res.send({
                 "message": "1 record inserted",
-                "admin": false
+                "admin": false,
+                "AdminID": result.insertId
               })
             // var AdminID = result.insertId;
             // console.log(result);
