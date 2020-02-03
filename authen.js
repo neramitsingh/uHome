@@ -59,7 +59,13 @@ module.exports.getUserID = function (email) {
           })
           .catch(function (error) {
             console.log('Error fetching user data:', error);
-            reject(error)
+            //reject(error)
+            let obj = {
+              message: {
+                error: error
+              }
+            }
+            reject(obj);
           });
       })
     }

@@ -87,7 +87,7 @@ app.post('/checkAdmin', (req, res) => {
         // Check whether user exists or not
         if (result.length == 0) { //User does not exist in DB
           var sql = `INSERT INTO admin (UserID) VALUES ('${resolve.uid}')`;
-          await con.query(sql, function (err, result) {
+          con.query(sql, function (err, result) {
             if (err) res.send({
               "message": err
             })
@@ -148,7 +148,7 @@ app.post('/admin/addHome', (req, res) => {
 
           var sql = `INSERT INTO home (AdminID,Name) VALUES ('${adminID}',"${name}")`;
 
-           con.query(sql, async function (err, result) {
+          con.query(sql, async function (err, result) {
             if (err) res.send({
               "message": err
             })
@@ -158,7 +158,7 @@ app.post('/admin/addHome', (req, res) => {
 
               var sql2 = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve.uid}")`;
 
-               con.query(sql2, function (err, result) {
+              con.query(sql2, function (err, result) {
                 if (err) res.send({
                   "message": err
                 })
@@ -191,34 +191,38 @@ app.post('/user/addtoHome', (req, res) => {
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
-    var uid = await authen.getUserID(email);
+    var getid = authen.getUserID(email).then(function (resolve) {
 
-    var con = mysql.createConnection({
-      host: "127.0.0.1",
-      user: "root",
-      password: "",
-      database: "uhomesql"
-    });
+      var uid = resolve.uid
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
 
-    con.connect(async function (err) {
-      if (err) {
-        throw err;
-        res.send(err);
-      }
-
-      var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${uid}")`;
-
-      con.query(sql, function (err, result) {
+      con.connect(async function (err) {
         if (err) res.send({
           "message": err
         })
-        else
-          res.send({
-            "message": "1 record inserted"
-          })
-      })
 
-    });
+        var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${uid}")`;
+
+        con.query(sql, function (err, result) {
+          if (err) res.send({
+            "message": err
+          })
+          else
+            res.send({
+              "message": "1 record inserted"
+            })
+        })
+
+      });
+    }).catch(function (reject) {
+      res.send(reject)
+
+    })
 
   }).catch(function (reject) {
 
@@ -504,6 +508,104 @@ app.post('/api/stoptimer', (req, res) => {
 //Below this line needs revision
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//Add Device to uHome //TODO: implement individual insert to both DBs
+app.post('/admin/addDevice/Hue', (req, res) => {
+  var LightObjs = req.body.message;
+
+  console.log(LightObjs)
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    var uid = resolve.uid
+
+
+
+    var HueCred = await getHueCreds(uid)
+
+    var access = HueCred.tokens.access.value,
+      refresh = HueCred.tokens.refresh.value,
+      username = HueCred.username
+
+    LightObjs.forEach(light => {
+
+      //var arr = [light.Name.toString(), light.RoomID.toString()]
+
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
+
+      con.connect(function (err) {
+        if (err) res.send({
+          "message": error
+        })
+
+        var sql = `INSERT INTO device (Name, RoomID) VALUES ("${light.Name}","${light.RoomID}")`;
+
+        con.query(sql, async function (err, result) {
+          if (err) res.send({
+            "message": error
+          })
+          else {
+            var DeviceID = result.insertId
+
+            var LightHue = await hue.getLight(access, refresh, username, light.LightID);
+
+            var obj = {
+              "DeviceID": DeviceID,
+              "Info": LightHue
+            }
+
+            MongoClient.connect(uri, {
+              useNewUrlParser: true,
+              useUnifiedTopology: true
+            }, (err, client) => {
+              if (err) {
+                res.send({
+                  "message": error
+                })
+                return
+              }
+              const db = client.db(dbname)
+              const collection = db.collection("devices")
+
+              collection.insertOne(obj, (err, result) => {
+                if (err) res.send(err)
+                else res.send(result)
+              })
+
+              client.close();
+
+            })
+          }
+        });
+
+      })
+
+      res.send({
+        "message": "Devices added"
+      })
+
+    }).catch(function (reject) {
+      res.send({
+        message: reject
+      })
+    })
+
+
+
+
+
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+
+
 
 
 
@@ -528,54 +630,54 @@ app.post('/api/addHueUser', (req, res) => {
   });
 })
 
-app.get('/convert', (req, res) => {
-  function httpGet2() {
-    const data = JSON.stringify({
-      "idToken": "1111",
-      "LightId": "4"
-    })
-    //console.log("Light API started" + data + " Type: " + typeof(data))
-    return new Promise(((resolve, reject) => {
-      var options = {
-        host: 'localhost',
-        port: 3000,
-        path: '/switchLight',
-        method: 'POST',
-        json: {
-          "idToken": "1111",
-          "LightId": "4"
-        },
-        headers: {
-          'Content-Type': 'application/json'
-        }
+// app.get('/convert', (req, res) => {
+//   function httpGet2() {
+//     const data = JSON.stringify({
+//       "idToken": "1111",
+//       "LightId": "4"
+//     })
+//     //console.log("Light API started" + data + " Type: " + typeof(data))
+//     return new Promise(((resolve, reject) => {
+//       var options = {
+//         host: 'localhost',
+//         port: 3000,
+//         path: '/switchLight',
+//         method: 'POST',
+//         json: {
+//           "idToken": "1111",
+//           "LightId": "4"
+//         },
+//         headers: {
+//           'Content-Type': 'application/json'
+//         }
 
-      };
+//       };
 
-      var req = http.request(options, (res) => {
-        console.log('statusCode:', res.statusCode);
-        console.log('headers:', res.headers);
+//       var req = http.request(options, (res) => {
+//         console.log('statusCode:', res.statusCode);
+//         console.log('headers:', res.headers);
 
-        res.on('data', (d) => {
-          process.stdout.write(d);
-        });
-      });
+//         res.on('data', (d) => {
+//           process.stdout.write(d);
+//         });
+//       });
 
-      req.on('error', (e) => {
-        console.error(e);
-      });
+//       req.on('error', (e) => {
+//         console.error(e);
+//       });
 
-      req.write(data);
-      req.end();
+//       req.write(data);
+//       req.end();
 
-    }));
-  }
-  async function run() {
-    var response = httpGet2();
-    console.log("################################# Response ##########################")
-    console.log(response)
-  }
-  run();
-})
+//     }));
+//   }
+//   async function run() {
+//     var response = httpGet2();
+//     console.log("################################# Response ##########################")
+//     console.log(response)
+//   }
+//   run();
+// })
 
 
 app.post('/api/addHueUser/callback', (req, res) => {
@@ -633,7 +735,49 @@ app.post('/switchLight', (req, res) => {
 
   // console.log("Body: ")
   // console.log(req.body)
-  var LightId = req.body.LightId
+  var DeviceID = req.body.DeviceID
+
+  console.log("DeviceID = "+ DeviceID)
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+    var Light = await getLightfromDB(DeviceID)
+
+    var  LightID = Light.Info.id
+
+    console.log(LightID);
+
+
+    var HueCred =  getHueCreds(uid).then(async function (resolve) {
+
+      var access = resolve.tokens.access.value,
+        refresh = resolve.tokens.refresh.value,
+        username = resolve.username,
+        expire = resolve.tokens.refresh.expiresAt
+      var state = hue.switchLight(access, refresh, username, LightID);
+      //console.log(resolve)
+      console.log(state)
+      res.send({
+        "message": "toggle activated",
+        "current_state": state
+      })
+    }).catch(function (reject) {
+      res.send(reject.err)
+    })
+
+
+  }).catch(function (reject) {
+    res.status(401).send(reject.error)
+  });
+
+})
+
+//Get all lights
+app.post('/getAllLights', (req, res) => {
+
+  // console.log("Body: ")
+  // console.log(req.body)
+  //var LightId = req.body.LightId
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
@@ -648,8 +792,6 @@ app.post('/switchLight', (req, res) => {
       }
       const db = client.db(dbname)
       const collection = db.collection("HueCred")
-
-      var val;
 
       var query1 = new Promise((resolve, reject) => {
         console.log("### Query 1 ###")
@@ -675,22 +817,103 @@ app.post('/switchLight', (req, res) => {
             refresh = resolve.tokens.refresh.value,
             username = resolve.username,
             expire = resolve.tokens.refresh.expiresAt
-          var state = await hue.switchLight(access, refresh, username, LightId);
+          var lights = await hue.getAllLights(access, refresh, username);
           //console.log(resolve)
-          console.log(state)
+          console.log(lights)
+
+          var LightArr = []
+
+          lights.forEach(light => {
+            var obj = {
+              "LightID": light._id,
+              "Name": light.name
+            }
+
+            LightArr.push(obj)
+          })
+
           res.send({
-            "message": "toggle activated",
-            "current_state": state
+            "message": LightArr
           })
         }).catch(function (reject) {
           res.send(reject.err)
         })
-
-
       }
-
       run();
+    })
+  }).catch(function (reject) {
+    res.status(401).send(reject.error)
+  });
 
+})
+
+app.post('/searchLight', (req, res) => {
+
+  // console.log("Body: ")
+  // console.log(req.body)
+  //var LightId = req.body.LightId
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+    //console.log(resolve)
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send(err)
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
+
+      var query1 = new Promise((resolve, reject) => {
+        console.log("### Query 1 ###")
+        collection.findOne({
+          uid: uid
+        }, (err, result) => {
+          if (err) {
+            reject(err);
+            console.log(err)
+          }
+          console.log(result);
+          resolve(result);
+
+        })
+
+        client.close();
+      })
+
+      var run = () => {
+        return query1.then(async function (resolve) {
+
+          var access = resolve.tokens.access.value,
+            refresh = resolve.tokens.refresh.value,
+            username = resolve.username,
+            expire = resolve.tokens.refresh.expiresAt
+          var lights = await hue.searchLight(access, refresh, username);
+          //console.log(resolve)
+          console.log(lights)
+
+          // var LightArr = []
+
+          // lights.forEach(light => {
+          //   var obj = {
+          //     "LightID": light._id,
+          //     "Name": light.name
+          //   }
+
+          //   LightArr.push(obj)
+          // })
+
+          // res.send({
+          //   "message": LightArr
+          // })
+        }).catch(function (reject) {
+          res.send(reject.err)
+        })
+      }
+      run();
     })
   }).catch(function (reject) {
     res.status(401).send(reject.error)
@@ -741,6 +964,22 @@ app.post('/api/device/add', (req, res) => {
 app.post('/api/device/get', (req, res) => {
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    //////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ///////////////////////////////////////////////
     //console.log(resolve)
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -1017,6 +1256,66 @@ module.exports.updateHueToken = function (data, UID) {
 
     query2();
     client.close();
+  })
+
+}
+
+function getHueCreds(uid) {
+  return new Promise((resolve, reject) => {
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send(err)
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
+
+
+      console.log("### Query 1 ###")
+      collection.findOne({
+        uid: uid
+      }, (err, result) => {
+        if (err) {
+          reject(err);
+          console.log(err)
+        }
+        console.log(result);
+        resolve(result);
+      })
+      client.close();
+    })
+  })
+}
+
+function getLightfromDB(DeviceID){
+
+  return new Promise((resolve, reject) => {
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send(err)
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("devices")
+
+      collection.findOne({
+        DeviceID: Number(DeviceID)
+      }, (err, result) => {
+        if (err) {
+          reject(err);
+          console.log(err)
+        }
+        console.log("Result = " +result);
+        resolve(result);
+      })
+      client.close();
+    })
   })
 
 }
