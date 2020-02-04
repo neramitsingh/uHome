@@ -125,6 +125,43 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
     });
 }
 
+module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId, RGB) {
+
+  const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
+
+  //checkExpired(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, "1")
+
+
+  // The username value is optional, one will be create upon connection if one is not passed in, but this example is
+  // pretending to be something close to what you would expect to operate like upon a reconnection using previously
+  // obtained tokens and username.
+  remoteBootstrap.connectWithTokens(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME)
+    .catch(err => {
+      console.error('Failed to get a remote connection using existing tokens.');
+      console.error(err);
+      process.exit(1);
+    })
+    .then(api => {
+      console.log('Successfully connected using the existing OAuth tokens.');
+
+      // Do something on the remote API, like list the lights in the bridge
+      api.lights.getLightState(LightId)
+        .then(state => {
+          // Display the state of the light
+          console.log(JSON.stringify(state, null, 2));
+          
+            newState = new LightState().on().RGB(RGB);
+          
+          api.lights.setLightState(LightId, newState)
+        })
+        .then(result => {
+          console.log(`Light state change was successful? ${result}`);
+        }).catch(err => {
+          console.error(err);
+        })
+    });
+}
+
 module.exports.getAllLights = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME) {
   // Replace this with your authorization code that you get from the Callback URL for your Hue Remote API Application.
   // If you do not fill this value in, the code will give you the URL to start the process for generating this value.

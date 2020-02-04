@@ -908,6 +908,56 @@ app.post('/switchLight', (req, res) => {
 
 })
 
+app.post('/setLight', (req, res) => {
+
+  // console.log("Body: ")
+  // console.log(req.body)
+  var DeviceID = req.body.DeviceID
+
+  var Hex = req.body.Hex
+
+  const hexToRgb = hex =>
+  hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i
+             ,(m, r, g, b) => '#' + r + r + g + g + b + b)
+    .substring(1).match(/.{2}/g)
+    .map(x => parseInt(x, 16))
+
+  var RGB = hexToRgb(Hex);
+
+  console.log("DeviceID = " + DeviceID)
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+    var Light = await getLightfromDB(DeviceID)
+
+    var LightID = Light.Info.id
+
+    console.log(LightID);
+
+
+    var HueCred = getHueCreds(uid).then(async function (resolve) {
+
+      var access = resolve.tokens.access.value,
+        refresh = resolve.tokens.refresh.value,
+        username = resolve.username,
+        expire = resolve.tokens.refresh.expiresAt
+      var state = hue.setLight(access, refresh, username, LightID, RGB);
+      //console.log(resolve)
+      console.log(state)
+      res.send({
+        "message": "Light set"
+      })
+    }).catch(function (reject) {
+      res.send(reject.err)
+    })
+
+
+  }).catch(function (reject) {
+    res.status(401).send(reject.error)
+  });
+
+})
+
 //Get all lights
 app.post('/getAllLights', (req, res) => {
 
