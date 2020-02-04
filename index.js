@@ -916,13 +916,17 @@ app.post('/setLight', (req, res) => {
 
   var Hex = req.body.Hex
 
+  var Hexval = "#" + Hex.substring(3,9)
+
+  console.log(Hexval)
+
   const hexToRgb = hex =>
   hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i
              ,(m, r, g, b) => '#' + r + r + g + g + b + b)
     .substring(1).match(/.{2}/g)
     .map(x => parseInt(x, 16))
 
-  var RGB = hexToRgb(Hex);
+  var RGB = hexToRgb(Hexval);
 
 
   console.log("DeviceID = " + DeviceID)
