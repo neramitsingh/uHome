@@ -18,6 +18,7 @@
     "node-gcm": "^1.0.2",
     "node-hue-api": "^3.4.3",
     "nodemon": "^1.19.2",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "sync": "^0.2.5"
   }
 }

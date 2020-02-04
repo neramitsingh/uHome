@@ -112,7 +112,7 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
           if (currentState) {
             newState = new LightState().off();
           } else {
-            newState = new LightState().on().ct(300).rgb(49,36,222);
+            newState = new LightState().on().ct(300);
           }
           api.lights.setLightState(LightId, newState)
           return !currentState

@@ -9,6 +9,7 @@ const ObjectId = require('mongodb').ObjectID;
 const app = express();
 const cors = require('cors')
 const authen = require('./authen')
+const Sync = require('sync');
 
 var randomstring = require("randomstring");
 
@@ -391,83 +392,75 @@ app.post('/admin/addRoom', (req, res) => {
 app.post('/admin/getUser', (req, res) => {
 
   var HomeID = req.body.HomeID
-  
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+  var uid = resolve.uid
+var SQLquery = new Promise((resolve, reject) => {
 
+  var con = mysql.createConnection({
+    host: "127.0.0.1",
+    user: "root",
+    password: "",
+    database: "uhomesql"
+  });
 
-    var con = mysql.createConnection({
-      host: "127.0.0.1",
-      user: "root",
-      password: "",
-      database: "uhomesql"
-    });
+  con.connect(async function (err) {
+    if (err) res.send({
+      "message": err
+    })
 
-    con.connect(async function (err) {
-      if (err) res.send({
-        "message": err
-      })
+    var sql = `SELECT * FROM home_user WHERE HomeID = '${HomeID}' `
 
-      var sql = `SELECT * FROM home_user WHERE HomeID = '${HomeID}' `
-
-      con.query(sql, function (err, result) {
-        //console.log(typeof result)
-        if (err) res.send({
+    con.query(sql, async function (err, result) {
+      if (err) {
+        res.send({
           "message": err
         })
-        else{
+        return
+      } else {
+        console.log(result)
+        resolve(result)
+      }
+    })
+    
+  });
+})
+////////////////////////////////////////////////////////////////////////
 
-          var newResult = []
-
-          var addtoResult= function(){
-
-            for(let i = 0; i < result.length; i++){
-            var user =  authen.getUser(result[i].UserID).then( function (resolve){
-
-              var obj = {
-                HomeID: result[i].HomeID,
-                UserID: result[i].UserID,
-                Name: resolve.uid,
-                Email: resolve.email
-              }
-
-              newResult[i].push(obj)
+var run = () => {
+  return SQLquery.then(async function (resolve) {
 
 
+    var newResult = []
 
-              console.log("counter: " + i)
-              console.log("###########################")
-              console.log("###########################")
-              console.log("result = " + JSON.stringify(newResult[i]));
-              console.log("###########################")
-              console.log("###########################")
+      await Promise.all(resolve.map(async (elem) =>{
 
-            })
-         
-          }
-          }
+        var user = await authen.getUser(elem.UserID);
 
-          // result.forEach(async elem =>{
+  
+      var obj = {
+        "HomeID": elem.HomeID,
+        "Name": user.displayName,
+        "UserID": elem.UserID,
+        "Email": user.email
+      }
 
-          //   var user =  authen.getUser(elem.UserID)
+      console.log(obj)
 
-          //   elem.Name = user.displayName
-          //   elem.email = user.email
-          // })
+      newResult.push(obj)
 
-          // console.log("result = "+ result.toString())
+      }))
+    res.send({
+          "message": newResult
+        })
 
-          addtoResult();
-
-
-          res.send({
-            "message": result
-          })
-        }
-        
-        
-      })
-
-    });
+    
+  }).catch(function (reject) {
+    res.send(reject.err)
+  })
+}
+run();
+    
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -484,8 +477,9 @@ app.post('/admin/getUser', (req, res) => {
 app.post('/user/getDevices', (req, res) => {
 
   var RoomID = req.body.RoomID
-  
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
 
 
     var con = mysql.createConnection({
@@ -502,14 +496,26 @@ app.post('/user/getDevices', (req, res) => {
 
       var sql = `SELECT DeviceID, Name FROM device WHERE RoomID = '${RoomID}' `
 
-      con.query(sql, function (err, result) {
+      con.query(sql, async function (err, result) {
         if (err) res.send({
           "message": err
         })
-        else
+        else{
+
+          await Promise.all(result.map(async (elem) =>{
+        
+          var light = await getLightfromDB(elem.DeviceID)
+
+          elem.on = light.Info.state.on
+    
+          }))
+
+
           res.send({
             "message": result
           })
+        }
+          
       })
 
     });
@@ -867,18 +873,18 @@ app.post('/switchLight', (req, res) => {
   // console.log(req.body)
   var DeviceID = req.body.DeviceID
 
-  console.log("DeviceID = "+ DeviceID)
+  console.log("DeviceID = " + DeviceID)
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
     var Light = await getLightfromDB(DeviceID)
 
-    var  LightID = Light.Info.id
+    var LightID = Light.Info.id
 
     console.log(LightID);
 
 
-    var HueCred =  getHueCreds(uid).then(async function (resolve) {
+    var HueCred = getHueCreds(uid).then(async function (resolve) {
 
       var access = resolve.tokens.access.value,
         refresh = resolve.tokens.refresh.value,
@@ -1420,7 +1426,7 @@ function getHueCreds(uid) {
   })
 }
 
-function getLightfromDB(DeviceID){
+function getLightfromDB(DeviceID) {
 
   return new Promise((resolve, reject) => {
     MongoClient.connect(uri, {
@@ -1441,7 +1447,7 @@ function getLightfromDB(DeviceID){
           reject(err);
           console.log(err)
         }
-        console.log("Result = " +result);
+        console.log("Result = " + result);
         resolve(result);
       })
       client.close();
