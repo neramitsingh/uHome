@@ -150,7 +150,7 @@ module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Light
           // Display the state of the light
           console.log(JSON.stringify(state, null, 2));
           
-            newState = new LightState().on().RGB(RGB);
+            var newState = new LightState().on().rgb(RGB);
           
           api.lights.setLightState(LightId, newState)
         })

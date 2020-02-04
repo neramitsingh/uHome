@@ -924,6 +924,7 @@ app.post('/setLight', (req, res) => {
 
   var RGB = hexToRgb(Hex);
 
+
   console.log("DeviceID = " + DeviceID)
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
