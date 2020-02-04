@@ -206,7 +206,7 @@ app.post('/user/addtoHome', (req, res) => {
           "message": err
         })
 
-        var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${uid}")`;
+        var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve}")`;
 
         con.query(sql, function (err, result) {
           if (err) res.send({
@@ -388,6 +388,136 @@ app.post('/admin/addRoom', (req, res) => {
   });
 })
 
+app.post('/admin/getUser', (req, res) => {
+
+  var HomeID = req.body.HomeID
+  
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+
+      var sql = `SELECT * FROM home_user WHERE HomeID = '${HomeID}' `
+
+      con.query(sql, function (err, result) {
+        //console.log(typeof result)
+        if (err) res.send({
+          "message": err
+        })
+        else{
+
+          var newResult = []
+
+          var addtoResult= function(){
+
+            for(let i = 0; i < result.length; i++){
+            var user =  authen.getUser(result[i].UserID).then( function (resolve){
+
+              var obj = {
+                HomeID: result[i].HomeID,
+                UserID: result[i].UserID,
+                Name: resolve.uid,
+                Email: resolve.email
+              }
+
+              newResult[i].push(obj)
+
+
+
+              console.log("counter: " + i)
+              console.log("###########################")
+              console.log("###########################")
+              console.log("result = " + JSON.stringify(newResult[i]));
+              console.log("###########################")
+              console.log("###########################")
+
+            })
+         
+          }
+          }
+
+          // result.forEach(async elem =>{
+
+          //   var user =  authen.getUser(elem.UserID)
+
+          //   elem.Name = user.displayName
+          //   elem.email = user.email
+          // })
+
+          // console.log("result = "+ result.toString())
+
+          addtoResult();
+
+
+          res.send({
+            "message": result
+          })
+        }
+        
+        
+      })
+
+    });
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+
+
+
+
+//  ##### Devices #######
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+app.post('/user/getDevices', (req, res) => {
+
+  var RoomID = req.body.RoomID
+  
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+
+      var sql = `SELECT DeviceID, Name FROM device WHERE RoomID = '${RoomID}' `
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        else
+          res.send({
+            "message": result
+          })
+      })
+
+    });
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
 
 
 

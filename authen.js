@@ -69,3 +69,27 @@ module.exports.getUserID = function (email) {
           });
       })
     }
+
+    module.exports.getUser = function (uid) {
+
+      return new Promise((resolve, reject) => {
+  
+          admin.auth().getUser(uid)
+            .then(function (userRecord) {
+              // See the UserRecord reference doc for the contents of userRecord.
+              console.log('Successfully fetched user data:', userRecord.toJSON());
+  
+              resolve(userRecord)
+            })
+            .catch(function (error) {
+              console.log('Error fetching user data:', error);
+              //reject(error)
+              let obj = {
+                message: {
+                  error: error
+                }
+              }
+              reject(obj);
+            });
+        })
+      }
