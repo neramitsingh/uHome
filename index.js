@@ -394,73 +394,73 @@ app.post('/admin/getUser', (req, res) => {
   var HomeID = req.body.HomeID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-  var uid = resolve.uid
-var SQLquery = new Promise((resolve, reject) => {
+    var uid = resolve.uid
+    var SQLquery = new Promise((resolve, reject) => {
 
-  var con = mysql.createConnection({
-    host: "127.0.0.1",
-    user: "root",
-    password: "",
-    database: "uhomesql"
-  });
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
 
-  con.connect(async function (err) {
-    if (err) res.send({
-      "message": err
-    })
-
-    var sql = `SELECT * FROM home_user WHERE HomeID = '${HomeID}' `
-
-    con.query(sql, async function (err, result) {
-      if (err) {
-        res.send({
+      con.connect(async function (err) {
+        if (err) res.send({
           "message": err
         })
-        return
-      } else {
-        console.log(result)
-        resolve(result)
-      }
+
+        var sql = `SELECT * FROM home_user WHERE HomeID = '${HomeID}' `
+
+        con.query(sql, async function (err, result) {
+          if (err) {
+            res.send({
+              "message": err
+            })
+            return
+          } else {
+            console.log(result)
+            resolve(result)
+          }
+        })
+
+      });
     })
-    
-  });
-})
-////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
 
-var run = () => {
-  return SQLquery.then(async function (resolve) {
+    var run = () => {
+      return SQLquery.then(async function (resolve) {
 
 
-    var newResult = []
+        var newResult = []
 
-      await Promise.all(resolve.map(async (elem) =>{
+        await Promise.all(resolve.map(async (elem) => {
 
-        var user = await authen.getUser(elem.UserID);
+          var user = await authen.getUser(elem.UserID);
 
-  
-      var obj = {
-        "HomeID": elem.HomeID,
-        "Name": user.displayName,
-        "UserID": elem.UserID,
-        "Email": user.email
-      }
 
-      console.log(obj)
+          var obj = {
+            "HomeID": elem.HomeID,
+            "Name": user.displayName,
+            "UserID": elem.UserID,
+            "Email": user.email
+          }
 
-      newResult.push(obj)
+          console.log(obj)
 
-      }))
-    res.send({
+          newResult.push(obj)
+
+        }))
+        res.send({
           "message": newResult
         })
 
-    
-  }).catch(function (reject) {
-    res.send(reject.err)
-  })
-}
-run();
-    
+
+      }).catch(function (reject) {
+        res.send(reject.err)
+      })
+    }
+    run();
+
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -500,14 +500,14 @@ app.post('/user/getDevices', (req, res) => {
         if (err) res.send({
           "message": err
         })
-        else{
+        else {
 
-          await Promise.all(result.map(async (elem) =>{
-        
-          var light = await getLightfromDB(elem.DeviceID)
+          await Promise.all(result.map(async (elem) => {
 
-          elem.on = light.Info.state.on
-    
+            var light = await getLightfromDB(elem.DeviceID)
+
+            elem.on = light.Info.state.on
+
           }))
 
 
@@ -515,7 +515,7 @@ app.post('/user/getDevices', (req, res) => {
             "message": result
           })
         }
-          
+
       })
 
     });
@@ -740,6 +740,45 @@ app.post('/admin/addDevice/Hue', (req, res) => {
   });
 })
 
+app.post('/checkHueCred', (req, res) => {
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+
+    var HueCred =  getHueCreds(uid).then(async function (resolve){
+      console.log(resolve)
+
+      if(resolve == null)
+      {
+        res.send({
+          //"HueCredexists": hueCredexists,
+          "hasHueCred":false
+        })
+      }
+      else{
+        res.send({
+          //"HueCredexists": hueCredexists,
+          "hasHueCred":true
+        })
+
+      }
+    
+
+    }).catch(function (reject){
+      res.send({
+        "message": reject
+      })
+    })
+
+    
+
+
+  }).catch(function (reject) {
+    res.status(401).send(reject.error)
+  });
+
+})
 
 
 
@@ -916,13 +955,20 @@ app.post('/setLight', (req, res) => {
 
   var Hex = req.body.Hex
 
-  var Hexval = "#" + Hex.substring(3,9)
+  var Hexval = "#" + Hex.substring(3, 9)
+  var brightHex = Hex.substring(1,3)
 
-  console.log(Hexval)
+  var brightness = parseInt(brightHex, 16);
+
+  console.log(brightness)
+
+  if(brightness == 0) brightness = 1
+  if(brightness == 255) brightness = 254
+
+  //console.log("New Hex: "+Hexval)
 
   const hexToRgb = hex =>
-  hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i
-             ,(m, r, g, b) => '#' + r + r + g + g + b + b)
+    hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => '#' + r + r + g + g + b + b)
     .substring(1).match(/.{2}/g)
     .map(x => parseInt(x, 16))
 
@@ -946,7 +992,7 @@ app.post('/setLight', (req, res) => {
         refresh = resolve.tokens.refresh.value,
         username = resolve.username,
         expire = resolve.tokens.refresh.expiresAt
-      var state = hue.setLight(access, refresh, username, LightID, RGB);
+      var state = hue.setLight(access, refresh, username, LightID, RGB, brightness);
       //console.log(resolve)
       console.log(state)
       res.send({
@@ -1459,7 +1505,7 @@ function getHueCreds(uid) {
     }, (err, client) => {
       if (err) {
         console.error(err)
-        res.send(err)
+        reject(err)
       }
       const db = client.db(dbname)
       const collection = db.collection("HueCred")
@@ -1473,8 +1519,11 @@ function getHueCreds(uid) {
           reject(err);
           console.log(err)
         }
-        console.log(result);
-        resolve(result);
+        else{
+          console.log(result);
+          resolve(result);
+        }
+        
       })
       client.close();
     })

@@ -47,49 +47,49 @@ module.exports.isAuthenticated = function (idToken) {
 
 module.exports.getUserID = function (email) {
 
-    return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
 
-        admin.auth().getUserByEmail(email)
-          .then(function (userRecord) {
-            // See the UserRecord reference doc for the contents of userRecord.
-            console.log('Successfully fetched user data:', userRecord.toJSON());
-            var uid = userRecord.uid
+    admin.auth().getUserByEmail(email)
+      .then(function (userRecord) {
+        // See the UserRecord reference doc for the contents of userRecord.
+        console.log('Successfully fetched user data:', userRecord.toJSON());
+        var uid = userRecord.uid
 
-            resolve(uid)
-          })
-          .catch(function (error) {
-            console.log('Error fetching user data:', error);
-            //reject(error)
-            let obj = {
-              message: {
-                error: error
-              }
-            }
-            reject(obj);
-          });
+        resolve(uid)
       })
-    }
+      .catch(function (error) {
+        console.log('Error fetching user data:', error);
+        //reject(error)
+        let obj = {
+          message: {
+            error: error
+          }
+        }
+        reject(obj);
+      });
+  })
+}
 
-    module.exports.getUser = function (uid) {
+module.exports.getUser = function (uid) {
 
-      return new Promise((resolve, reject) => {
-  
-          admin.auth().getUser(uid)
-            .then(function (userRecord) {
-              // See the UserRecord reference doc for the contents of userRecord.
-              console.log('Successfully fetched user data:', userRecord.toJSON());
-  
-              resolve(userRecord)
-            })
-            .catch(function (error) {
-              console.log('Error fetching user data:', error);
-              //reject(error)
-              let obj = {
-                message: {
-                  error: error
-                }
-              }
-              reject(obj);
-            });
-        })
-      }
+  return new Promise((resolve, reject) => {
+
+    admin.auth().getUser(uid)
+      .then(function (userRecord) {
+        // See the UserRecord reference doc for the contents of userRecord.
+        console.log('Successfully fetched user data:', userRecord.toJSON());
+
+        resolve(userRecord)
+      })
+      .catch(function (error) {
+        console.log('Error fetching user data:', error);
+        //reject(error)
+        let obj = {
+          message: {
+            error: error
+          }
+        }
+        reject(obj);
+      });
+  })
+}

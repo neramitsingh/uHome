@@ -125,7 +125,7 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
     });
 }
 
-module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId, RGB) {
+module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId, RGB, brightness) {
 
   const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
 
@@ -149,9 +149,9 @@ module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Light
         .then(state => {
           // Display the state of the light
           console.log(JSON.stringify(state, null, 2));
-          
-            var newState = new LightState().on().rgb(RGB);
-          
+
+          var newState = new LightState().on().rgb(RGB).bri(brightness);
+
           api.lights.setLightState(LightId, newState)
         })
         .then(result => {
