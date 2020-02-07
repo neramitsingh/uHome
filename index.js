@@ -506,7 +506,7 @@ app.post('/user/getDevices', (req, res) => {
 
             var light = await getLightfromDB(elem.DeviceID)
 
-            elem.on = light.Info.state.on
+            elem.on = light.On
 
           }))
 
@@ -691,7 +691,9 @@ app.post('/admin/addDevice/Hue', (req, res) => {
 
             var obj = {
               "DeviceID": DeviceID,
-              "Info": LightHue
+              "Info": LightHue,
+              "Enabled": true,
+              "On": LightHue.state.on
             }
 
             MongoClient.connect(uri, {
@@ -929,13 +931,48 @@ app.post('/switchLight', (req, res) => {
         refresh = resolve.tokens.refresh.value,
         username = resolve.username,
         expire = resolve.tokens.refresh.expiresAt
-      var state = hue.switchLight(access, refresh, username, LightID);
-      //console.log(resolve)
+      var state = await hue.switchLight(access, refresh, username, LightID);
+
       console.log(state)
-      res.send({
-        "message": "toggle activated",
-        "current_state": state
+
+      MongoClient.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }, (err, client) => {
+        if (err) {
+          console.error(err)
+          res.send({
+            error: err
+          })
+        }
+        const db = client.db(dbname)
+        const collection = db.collection("devices")
+  
+        var newvalues = {
+          $set: {
+            On: state
+          }
+        };
+  
+        collection.updateOne({
+          //_id: ObjectId("5e384705f372471f18d611f1")
+          DeviceID: Number(DeviceID)
+        }, newvalues, (err, result) => {
+          if (err) res.send(err)
+          else {
+            res.send({
+              "message": "Light switched",
+              "current_state": state
+            })
+  
+          }
+        })
       })
+
+      
+      //console.log(resolve)
+      
+      
     }).catch(function (reject) {
       res.send(reject.err)
     })
@@ -1557,5 +1594,43 @@ function getLightfromDB(DeviceID) {
       client.close();
     })
   })
-
 }
+
+app.post('/notification/addRegis', (req, res) => {
+  var RegisID = req.body.RegisID
+
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    var uid = resolve.uid
+
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+    
+    con.connect(function(err) {
+      if (err) throw err;
+      console.log("Connected!");
+
+      var sql = `INSERT INTO user_noti (UserID, RegisID) VALUES ('${uid}', '${RegisID}')`;
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        console.log("1 record inserted");
+
+    });
+  })
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
+
+
+

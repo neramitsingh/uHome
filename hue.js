@@ -85,6 +85,10 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
 
   const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
 
+  return new Promise((resolve,reject)=>{
+
+  
+
   //checkExpired(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, "1")
 
   var currentState;
@@ -115,7 +119,7 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
             newState = new LightState().on().ct(300);
           }
           api.lights.setLightState(LightId, newState)
-          return !currentState
+          resolve(!currentState)
         })
         .then(result => {
           console.log(`Light state change was successful? ${result}`);
@@ -123,6 +127,7 @@ module.exports.switchLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Li
           console.error(err);
         })
     });
+  })
 }
 
 module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId, RGB, brightness) {
@@ -151,6 +156,45 @@ module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Light
           console.log(JSON.stringify(state, null, 2));
 
           var newState = new LightState().on().rgb(RGB).bri(brightness);
+          
+
+          api.lights.setLightState(LightId, newState)
+        })
+        .then(result => {
+          console.log(`Light state change was successful? ${result}`);
+        }).catch(err => {
+          console.error(err);
+        })
+    });
+}
+
+module.exports.LightLoop = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, LightId, RGB, brightness) {
+
+  const remoteBootstrap = v3.api.createRemote(CLIENT_ID, CLIENT_SECRET);
+
+  //checkExpired(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, "1")
+
+
+  // The username value is optional, one will be create upon connection if one is not passed in, but this example is
+  // pretending to be something close to what you would expect to operate like upon a reconnection using previously
+  // obtained tokens and username.
+  remoteBootstrap.connectWithTokens(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME)
+    .catch(err => {
+      console.error('Failed to get a remote connection using existing tokens.');
+      console.error(err);
+      process.exit(1);
+    })
+    .then(api => {
+      console.log('Successfully connected using the existing OAuth tokens.');
+
+      // Do something on the remote API, like list the lights in the bridge
+      api.lights.getLightState(LightId)
+        .then(state => {
+          // Display the state of the light
+          console.log(JSON.stringify(state, null, 2));
+
+          // var newState = new LightState().on().rgb(RGB).bri(brightness);
+          var newState = new LightState().on().effectColorLoop().transitionInstant();
 
           api.lights.setLightState(LightId, newState)
         })
@@ -270,5 +314,3 @@ function checkExpired(ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, ACCESS_EXPIRE, REFR
     });
 
 }
-//}
-//}
