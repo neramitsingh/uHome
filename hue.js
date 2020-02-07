@@ -53,10 +53,12 @@ module.exports.addHueUser = function (authCode) {
           console.error('Failed to get a remote connection using authorization code.');
           console.error(err);
           reject(err);
+          return
         })
         .then(api => {
           console.log('Successfully validated authorization code and exchanged for tokens');
 
+          
           const remoteCredentials = api.remote.getRemoteAccessCredentials();
 
           // Display the tokens and username that we now have from using the authorization code. These need to be stored
@@ -66,16 +68,15 @@ module.exports.addHueUser = function (authCode) {
           console.log(`The Refresh Token is valid until: ${new Date(remoteCredentials.tokens.refresh.expiresAt)}`);
           console.log('\nNote: You should securely store the tokens and username from above as you can use them to connect\n' +
             'in the future.');
-
+            resolve(remoteCredentials)
           // Do something on the remote API, like list the lights
-          api.lights.getAll()
-            .then(lights => {
-              console.log('Retrieved the following lights for the bridge over the Remote Hue API');
-              lights.forEach(light => {
-                console.log(light.toStringDetailed());
-              })
-            });
-          resolve(remoteCredentials)
+          // api.lights.getAll()
+          //   .then(lights => {
+          //     console.log('Retrieved the following lights for the bridge over the Remote Hue API');
+          //     lights.forEach(light => {
+          //       console.log(light.toStringDetailed());
+          //     })
+          //   });
         })
     }
   })

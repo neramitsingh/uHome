@@ -2,7 +2,7 @@ const express = require('express')
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const hue = require('./hue')
-const http = require('http');
+const https = require('https');
 const mysql = require('mysql');
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
 const ObjectId = require('mongodb').ObjectID;
@@ -53,9 +53,67 @@ app.use(express.json());
 
 app.get('/status', (req, res) => {
 
-  res.send({
-    "message": "Online"
-  })
+  // res.send({
+  //   "message": "Online"
+  // })
+
+  // var url = "https://cloud.estimote.com/v3/devices"
+  //       var result = axios.get(url, {
+  //           headers: {
+  //             'Access-Control-Allow-Origin': '*',
+  //             'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+  //             'Content-Type': 'application/json'
+  //           },
+  //           proxy: {
+  //             host: '192.168.1.7',
+  //             port: 8080
+  //           },
+  //           auth: {
+  //             // username: this.appID,
+  //             // password: this.appToken
+  //             username: 'uhome-g7u',
+  //             password: 'edeae45dd50b1d0ff0f4efbe7f165a91'
+  //           }
+  //         })
+  //         .then(function (response) {
+  //           console.log(response);
+  //         })
+  //         .catch(function (error) {
+  //           console.log(error);
+  //         });
+
+
+  var options = {
+    hostname: 'cloud.estimote.com',
+    path: '/v3/devices',
+    method: 'GET',
+    auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+      'Content-Type': 'application/json'
+    }
+  };
+  
+  var req = https.request(options, function(resp) {
+    console.log("statusCode: ", res.statusCode);
+    console.log("headers: ", res.headers);
+  
+    resp.on('data', function(d) {
+      //process.stdout.write(d);
+      //res.json(d.toString())
+       res.send(d)
+    });
+
+    
+  });
+  req.end();
+  
+  req.on('error', function(e) {
+    console.error(e);
+  });
+
+
 
 })
 
@@ -861,6 +919,8 @@ app.post('/api/addHueUser/callback', (req, res) => {
   var code = req.body.code;
   var state = req.body.state
 
+  
+
   var obj = {
     "code": code,
     "state": state
@@ -871,33 +931,33 @@ app.post('/api/addHueUser/callback', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var uid = resolve.uid
+    
+    
 
-    var resultcred = hue.addHueUser(code).then(function (resolve) {
-      resultcred.uid = uid
-
-      MongoClient.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      }, (err, client) => {
-        if (err) {
-          console.error(err)
-          return
-        }
-        const db = client.db(dbname)
-        const collection = db.collection("HueCred")
-
-        collection.insertOne(resultcred, (err, result) => {
-          if (err) res.send(err)
-          else res.send(result)
-        })
-
-        client.close();
-
+    var resultcred = await hue.addHueUser(code)
+    .catch(function (reject){
+      res.send({
+        message:"Token retrieval failed",
+        obj: reject
       })
-    }).catch(function (reject) {
-      res.send(reject)
     })
-    console.log(result)
+
+    console.log(resultcred)
+
+    insertHueCred(resultcred,uid).then(function (resolve){
+      res.send({
+        message: "Success",
+        object: resolve
+        
+      })
+    }).catch(function (reject){
+      res.send({
+        message: "Failed",
+        object: reject
+      })
+    })
+    
+    
 
   }).catch(function (reject) {
 
@@ -1632,5 +1692,41 @@ app.post('/notification/addRegis', (req, res) => {
   });
   })
 
+  function insertHueCred(value,uid) {
+    return new Promise((resolve,reject)=>{
+
+
+      if(!value){
+        console.log("no fucking value in here")
+        reject(value)
+      } 
+      value.uid = uid
+      MongoClient.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }, (err, client) => {
+        if (err) {
+          console.error(err)
+          reject(err)
+          return
+        }
+        const db = client.db(dbname)
+        const collection = db.collection("HueCred")
+
+        collection.insertOne(value, (err, result) => {
+          if (err){
+            console.log(err)
+            reject(err)
+          } 
+          else{
+            console.log(err)
+            resolve(result)
+          } 
+        })
+
+        client.close();
+      })
+    })
+  }
 
 
