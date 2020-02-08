@@ -134,10 +134,19 @@ app.post('/getEstimoteKey', (req, res) => {
 
     var result = await getEstimoteKey(HomeID)
 
-    res.send({
-      AppID : result[0].AppID,
-      AppToken : result[0].AppToken
+    if(result == null)
+    {
+      res.send({
+        AppID : result[0].AppID,
+        AppToken : result[0].AppToken
+      })
+
+    }
+    else res.send({
+      message:"No AppID and AppToken in database."
     })
+
+    
 
     
 
