@@ -53,69 +53,191 @@ app.use(express.json());
 
 app.get('/status', (req, res) => {
 
-  // res.send({
-  //   "message": "Online"
-  // })
+  res.send({
+    "message": "Online"
+  })
+})
 
-  // var url = "https://cloud.estimote.com/v3/devices"
-  //       var result = axios.get(url, {
-  //           headers: {
-  //             'Access-Control-Allow-Origin': '*',
-  //             'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-  //             'Content-Type': 'application/json'
-  //           },
-  //           proxy: {
-  //             host: '192.168.1.7',
-  //             port: 8080
-  //           },
-  //           auth: {
-  //             // username: this.appID,
-  //             // password: this.appToken
-  //             username: 'uhome-g7u',
-  //             password: 'edeae45dd50b1d0ff0f4efbe7f165a91'
-  //           }
-  //         })
-  //         .then(function (response) {
-  //           console.log(response);
-  //         })
-  //         .catch(function (error) {
-  //           console.log(error);
-  //         });
+app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
+
+  var HomeID = req.body.HomeID
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    var getEst = await getEstimoteKey(HomeID)
 
 
-  var options = {
-    hostname: 'cloud.estimote.com',
-    path: '/v3/devices',
-    method: 'GET',
-    auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-      'Content-Type': 'application/json'
-    }
-  };
+    var AppID = getEst[0].AppID
+    var AppToken = getEst[0].AppToken
+
+    var data = []
+
+    var options = {
+      hostname: 'cloud.estimote.com',
+      path: '/v3/devices',
+      method: 'GET',
+      //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+      auth: `${AppID}:${AppToken}`,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    var req = https.request(options, function(resp) {
+      console.log("statusCode: ", res.statusCode);
+      console.log("headers: ", res.headers);
+    
+      resp.on('data', async function(d) {
+
+        var k = JSON.parse(d)
+         
+        await Promise.all(k.data.map(async (elem) =>{
+
+          var exists = await compareEstimoteBeacon(elem.identifier).catch(function (reject){
+            res.send({
+              message: "error"
+            })
+          })
+
+          if(exists == false){
+            data.push(elem)
+          }
+
+        }))
+        
+        res.send({
+          message: data
+        })
+
+      });
   
-  var req = https.request(options, function(resp) {
-    console.log("statusCode: ", res.statusCode);
-    console.log("headers: ", res.headers);
-  
-    resp.on('data', function(d) {
-      //process.stdout.write(d);
-      //res.json(d.toString())
-       res.send(d)
+      
     });
+    req.end();
+    
+    req.on('error', function(e) {
+      console.error(e);
+    });
+    
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+})
+
+app.post('/getEstimoteKey', (req, res) => {
+
+  var HomeID = req.body.HomeID
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    var result = await getEstimoteKey(HomeID)
+
+    res.send({
+      AppID : result[0].AppID,
+      AppToken : result[0].AppToken
+    })
 
     
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
   });
-  req.end();
+  })
+
+  app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
   
-  req.on('error', function(e) {
-    console.error(e);
+    var EstObjs = req.body.message
+    var HomeID = req.body.HomeID
+
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    //var HueCred = await getHueCreds(uid)
+
+    var EstimoteKey = await getEstimoteKey(HomeID)
+
+
+
+    EstObjs.forEach(est => {
+
+
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
+
+      con.connect(function (err) {
+        if (err) res.send({
+          "message": error
+        })
+
+        var sql = `INSERT INTO device (Name, RoomID, Type) VALUES ("${est.Name}","${est.RoomID}","Estimote Beacon")`;
+
+        con.query(sql, async function (err, result) {
+          if (err) res.send({
+            "message": error
+          })
+          else {
+            var DeviceID = result.insertId
+
+            // var LightHue = await hue.getLight(access, refresh, username, light.LightID);
+
+            var obj = {
+              "DeviceID": DeviceID,
+              "Info": est.Info,
+              "Enabled": true,
+            }
+
+            MongoClient.connect(uri, {
+              useNewUrlParser: true,
+              useUnifiedTopology: true
+            }, (err, client) => {
+              if (err) {
+                res.send({
+                  "message": error
+                })
+                return
+              }
+              const db = client.db(dbname)
+              const collection = db.collection("devices")
+
+              collection.insertOne(obj, (err, result) => {
+                if (err) res.send(err)
+                else res.send(result)
+              })
+
+              client.close();
+
+            })
+          }
+        });
+
+      })
+
+      res.send({
+        "message": "Devices added"
+      })
+
+    })
+    // .catch(function (reject) {
+    //   res.send({
+    //     message: reject
+    //   })
+    // })
+
+    
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
   });
+  })
 
-
-
-})
+  
 
 
 //##### User and Home Management #####
@@ -1681,6 +1803,9 @@ app.post('/notification/addRegis', (req, res) => {
         if (err) res.send({
           "message": err
         })
+        res.send({
+          message: "1 record inserted"
+        })
         console.log("1 record inserted");
 
     });
@@ -1728,5 +1853,103 @@ app.post('/notification/addRegis', (req, res) => {
       })
     })
   }
+
+  app.post('/admin/add/Estimote/App', (req, res) => {
+    var AppID = req.body.AppID
+    var AppToken = req.body.AppToken
+    var HomeID = req.body.HomeID
+  
+    var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
+      
+      con.connect(function(err) {
+        if (err) throw err;
+        console.log("Connected!");
+  
+        var sql = `INSERT INTO estimote_key (HomeID, AppID, AppToken) VALUES ('${HomeID}', '${AppID}', '${AppToken}')`;
+  
+        con.query(sql, function (err, result) {
+          if (err) res.send({
+            "message": err
+          })
+          res.send({
+            message: "1 record inserted"
+          })
+  
+      });
+    })
+  
+    }).catch(function(reject){
+      
+      res.status(401).send(reject.error)
+    });
+    })
+
+    function getEstimoteKey(HomeID){
+      return new Promise((resolve,reject)=>{
+
+        var con = mysql.createConnection({
+          host: "127.0.0.1",
+          user: "root",
+          password: "",
+          database: "uhomesql"
+        });
+
+        var sql = `SELECT * FROM estimote_key WHERE HomeID = ${HomeID}`
+        
+        con.connect(function(err) {
+          if (err) reject(err)
+          con.query(sql, function (err, result, fields) {
+            if (err) reject(err)
+            console.log(result)
+            resolve(result)
+          });
+        });
+
+      })
+    }
+
+    function compareEstimoteBeacon(identifier) {
+
+      return new Promise((resolve, reject) => {
+        MongoClient.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        }, (err, client) => {
+          if (err) {
+            console.error(err)
+            reject(err)
+          }
+          const db = client.db(dbname)
+          const collection = db.collection("devices")
+    
+          collection.findOne({
+            Identifier: identifier
+          }, (err, result) => {
+            if (err) {
+              reject(err);
+              console.log(err)
+            }
+            console.log("Result = " + result);
+            if(result == null)
+            {
+              resolve(false)
+            }
+            else{
+              resolve(true)
+            }
+            
+          })
+          client.close();
+        })
+      })
+    }
+
 
 
