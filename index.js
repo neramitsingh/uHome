@@ -889,13 +889,14 @@ app.post('/admin/addDevice/Hue', (req, res) => {
 
 
 
-    var HueCred = await getHueCreds(uid)
+    
+
+    LightObjs.forEach(async light => {
+      var HueCred = await getHueCreds(light.HomeID)
 
     var access = HueCred.tokens.access.value,
       refresh = HueCred.tokens.refresh.value,
       username = HueCred.username
-
-    LightObjs.forEach(light => {
 
       //var arr = [light.Name.toString(), light.RoomID.toString()]
 
