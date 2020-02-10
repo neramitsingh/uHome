@@ -1284,10 +1284,11 @@ app.post('/setLight', (req, res) => {
 //Get all lights
 app.post('/getAllLights', (req, res) => {
 
-  var HomeID = req.body,
-    HomeID
+  var HomeID = req.body.HomeID
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
+
+    console.log("HomeID: "+HomeID)
 
     //console.log(resolve)
     MongoClient.connect(uri, {
@@ -1304,7 +1305,7 @@ app.post('/getAllLights', (req, res) => {
       var query1 = new Promise((resolve, reject) => {
         console.log("### Query 1 ###")
         collection.findOne({
-          HomeID: HomeID
+          HomeID: Number(HomeID)
         }, (err, result) => {
           if (err) {
             reject(err);
@@ -1318,7 +1319,7 @@ app.post('/getAllLights', (req, res) => {
         client.close();
       })
 
-      var run = () => {
+      var run = () => {``
         return query1.then(async function (resolve) {
 
           var access = resolve.tokens.access.value,
