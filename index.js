@@ -414,14 +414,15 @@ app.post('/user/addtoHome', (req, res) => {
           "message": err
         })
 
-        var check = `SELECT * FROM home_user WHERE HomeID = "${homeID}" AND UserID = "${resolve}"`
+        var check = `SELECT * FROM home_user WHERE HomeID = "${homeID}" AND  UserID = "${resolve}"`
 
         con.query(check, function (err, result) {
+          console.log(result)
           if (err) res.send({
             "message": err
           })
           else {
-            if (result == null) {
+            if (result.length == 0) {
               var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve}")`;
 
               con.query(sql, function (err, result) {
