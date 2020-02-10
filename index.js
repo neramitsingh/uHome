@@ -879,18 +879,13 @@ app.post('/api/stoptimer', (req, res) => {
 
 //Add Device to uHome //TODO: implement individual insert to both DBs
 app.post('/admin/addDevice/Hue', (req, res) => {
+  
   var LightObjs = req.body.message;
 
   console.log(LightObjs)
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-
     var uid = resolve.uid
-
-
-
-    
-
     LightObjs.forEach(async light => {
       var HueCred = await getHueCreds(light.HomeID)
 
@@ -908,16 +903,18 @@ app.post('/admin/addDevice/Hue', (req, res) => {
       });
 
       con.connect(function (err) {
-        if (err) res.send({
-          "message": error
-        })
+        if (err) //res.send({
+        //   "message": error
+        // })
+        console.log(err)
 
-        var sql = `INSERT INTO device (Name, RoomID) VALUES ("${light.Name}","${light.RoomID}")`;
+        var sql = `INSERT INTO device (Name, RoomID, Type) VALUES ("${light.Name}","${light.RoomID}","Hue")`;
 
         con.query(sql, async function (err, result) {
-          if (err) res.send({
-            "message": error
-          })
+          if (err)// res.send({
+          //   "message": error
+          // })
+          console.log(err)
           else {
             var DeviceID = result.insertId
 
@@ -930,22 +927,28 @@ app.post('/admin/addDevice/Hue', (req, res) => {
               "On": LightHue.state.on
             }
 
+            console.log(obj)
+
             MongoClient.connect(uri, {
               useNewUrlParser: true,
               useUnifiedTopology: true
             }, (err, client) => {
               if (err) {
-                res.send({
-                  "message": error
-                })
+                // res.send({
+                //   "message": error
+                // })
+                console.log(err)
                 return
               }
               const db = client.db(dbname)
               const collection = db.collection("devices")
 
               collection.insertOne(obj, (err, result) => {
-                if (err) res.send(err)
-                else res.send(result)
+                if (err) //res.send(err)
+                console.log(err)
+                // else res.send({
+                //   message: result
+                // })
               })
 
               client.close();
@@ -960,15 +963,12 @@ app.post('/admin/addDevice/Hue', (req, res) => {
         "message": "Devices added"
       })
 
-    }).catch(function (reject) {
-      res.send({
-        message: reject
-      })
     })
-
-
-
-
+    // .catch(function (reject) {
+    //   res.send({
+    //     message: reject
+    //   })
+    // })
 
   }).catch(function (reject) {
 
