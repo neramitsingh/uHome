@@ -1766,7 +1766,7 @@ module.exports.updateHueToken = function (data, UID) {
 
 }
 
-function getHueCreds(uid) {
+function getHueCreds(HomeID) {
   return new Promise((resolve, reject) => {
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -1782,7 +1782,7 @@ function getHueCreds(uid) {
 
       console.log("### Query 1 ###")
       collection.findOne({
-        uid: uid
+        HomeID: Number(HomeID)
       }, (err, result) => {
         if (err) {
           reject(err);
