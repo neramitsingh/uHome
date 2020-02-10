@@ -61,7 +61,7 @@ app.get('/status', (req, res) => {
 app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
   var HomeID = req.body.HomeID
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var getEst = await getEstimoteKey(HomeID)
 
@@ -83,46 +83,46 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
         'Content-Type': 'application/json'
       }
     };
-    
-    var req = https.request(options, function(resp) {
+
+    var req = https.request(options, function (resp) {
       console.log("statusCode: ", res.statusCode);
       console.log("headers: ", res.headers);
-    
-      resp.on('data', async function(d) {
+
+      resp.on('data', async function (d) {
 
         var k = JSON.parse(d)
-         
-        await Promise.all(k.data.map(async (elem) =>{
 
-          var exists = await compareEstimoteBeacon(elem.identifier).catch(function (reject){
+        await Promise.all(k.data.map(async (elem) => {
+
+          var exists = await compareEstimoteBeacon(elem.identifier).catch(function (reject) {
             res.send({
               message: "error"
             })
           })
 
-          if(exists == false){
+          if (exists == false) {
             data.push(elem)
           }
 
         }))
-        
+
         res.send({
           message: data
         })
 
       });
-  
-      
+
+
     });
     req.end();
-    
-    req.on('error', function(e) {
+
+    req.on('error', function (e) {
       console.error(e);
     });
-    
 
-  }).catch(function(reject){
-    
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
 })
@@ -130,59 +130,55 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 app.post('/getEstimoteKey', (req, res) => {
 
   var HomeID = req.body.HomeID
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var result = await getEstimoteKey(HomeID)
 
-    if(result != null)
-    {
+    if (result != null) {
       res.send({
-        AppID : result[0].AppID,
-        AppToken : result[0].AppToken
+        AppID: result[0].AppID,
+        AppToken: result[0].AppToken
       })
 
-    }
-    else res.send({
-      message:"No AppID and AppToken in database."
+    } else res.send({
+      message: "No AppID and AppToken in database."
     })
-  }).catch(function(reject){
-    
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
-  app.post('/getEstimoteKey', (req, res) => {
+app.post('/getEstimoteKey', (req, res) => {
 
   var HomeID = req.body.HomeID
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var result = await getEstimoteKey(HomeID)
 
-    if(result != null)
-    {
+    if (result != null) {
       res.send({
-        AppID : result[0].AppID,
-        AppToken : result[0].AppToken,
+        AppID: result[0].AppID,
+        AppToken: result[0].AppToken,
         EstimoteKeyExists: true
       })
 
-    }
-    else res.send({
-      message:"No AppID and AppToken in database.",
+    } else res.send({
+      message: "No AppID and AppToken in database.",
       EstimoteKeyExists: false
     })
-  }).catch(function(reject){
-    
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
-  app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
-  
-    var EstObjs = req.body.message
-    var HomeID = req.body.HomeID
+app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var EstObjs = req.body.message
+  var HomeID = req.body.HomeID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     //var HueCred = await getHueCreds(uid)
 
@@ -260,15 +256,15 @@ app.post('/getEstimoteKey', (req, res) => {
     //   })
     // })
 
-    
 
-  }).catch(function(reject){
-    
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
-  
+
 
 
 //##### User and Home Management #####
@@ -418,17 +414,35 @@ app.post('/user/addtoHome', (req, res) => {
           "message": err
         })
 
-        var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve}")`;
+        var check = `SELECT * FROM home_user WHERE HomeID = ${homeID} AND UserID = ${resolve}`
 
-        con.query(sql, function (err, result) {
+        con.query(check, function (err, result) {
           if (err) res.send({
             "message": err
           })
-          else
-            res.send({
-              "message": "1 record inserted"
+          else {
+            if (result == null) {
+              var sql = `INSERT INTO home_user (HomeID,UserID) VALUES ('${homeID}',"${resolve}")`;
+
+              con.query(sql, function (err, result) {
+                if (err) res.send({
+                  "message": err
+                })
+                else
+                  res.send({
+                    "message": "1 record inserted"
+                  })
+              })
+            }
+            else res.send({
+              message: "The user you are trying to add already exists."
             })
+          }
+
         })
+
+
+
 
       });
     }).catch(function (reject) {
@@ -570,10 +584,10 @@ app.post('/admin/addRoom', (req, res) => {
 
     await Promise.all(message.map(async (elem) => {
 
-      newValues.push([HomeID,elem.name,elem.type])
+      newValues.push([HomeID, elem.name, elem.type])
 
     }))
-    
+
     var con = mysql.createConnection({
       host: "127.0.0.1",
       user: "root",
@@ -966,32 +980,30 @@ app.post('/checkHueCred', (req, res) => {
     var uid = resolve.uid
 
 
-    var HueCred =  getHueCreds(uid).then(async function (resolve){
+    var HueCred = getHueCreds(uid).then(async function (resolve) {
       console.log(resolve)
 
-      if(resolve == null)
-      {
+      if (resolve == null) {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred":false
+          "hasHueCred": false
         })
-      }
-      else{
+      } else {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred":true
+          "hasHueCred": true
         })
 
       }
-    
 
-    }).catch(function (reject){
+
+    }).catch(function (reject) {
       res.send({
         "message": reject
       })
     })
 
-    
+
 
 
   }).catch(function (reject) {
@@ -1080,7 +1092,7 @@ app.post('/api/addHueUser/callback', (req, res) => {
   var state = req.body.state
   var HomeID = req.body.HomeID;
 
-  
+
 
   var obj = {
     "code": code,
@@ -1092,26 +1104,26 @@ app.post('/api/addHueUser/callback', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var uid = resolve.uid
-    
-    
+
+
 
     var resultcred = await hue.addHueUser(code)
-    .catch(function (reject){
-      res.send({
-        message:"Token retrieval failed",
-        obj: reject
+      .catch(function (reject) {
+        res.send({
+          message: "Token retrieval failed",
+          obj: reject
+        })
       })
-    })
 
     console.log(resultcred)
 
-    insertHueCred(resultcred,uid).then(function (resolve){
+    insertHueCred(resultcred, uid).then(function (resolve) {
       res.send({
         message: "Success",
         object: resolve
-        
+
       })
-    }).catch(function (reject){
+    }).catch(function (reject) {
       res.send({
         message: "Failed",
         object: reject
@@ -1119,8 +1131,8 @@ app.post('/api/addHueUser/callback', (req, res) => {
     })
 
     //Copy to home
-    insertHueCredHome(resultcred,HomeID)
-    
+    insertHueCredHome(resultcred, HomeID)
+
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -1169,13 +1181,13 @@ app.post('/switchLight', (req, res) => {
         }
         const db = client.db(dbname)
         const collection = db.collection("devices")
-  
+
         var newvalues = {
           $set: {
             On: state
           }
         };
-  
+
         collection.updateOne({
           //_id: ObjectId("5e384705f372471f18d611f1")
           DeviceID: Number(DeviceID)
@@ -1186,15 +1198,15 @@ app.post('/switchLight', (req, res) => {
               "message": "Light switched",
               "current_state": state
             })
-  
+
           }
         })
       })
 
-      
+
       //console.log(resolve)
-      
-      
+
+
     }).catch(function (reject) {
       res.send(reject.err)
     })
@@ -1215,14 +1227,14 @@ app.post('/setLight', (req, res) => {
   var Hex = req.body.Hex
 
   var Hexval = "#" + Hex.substring(3, 9)
-  var brightHex = Hex.substring(1,3)
+  var brightHex = Hex.substring(1, 3)
 
   var brightness = parseInt(brightHex, 16);
 
   console.log(brightness)
 
-  if(brightness == 0) brightness = 1
-  if(brightness == 255) brightness = 254
+  if (brightness == 0) brightness = 1
+  if (brightness == 255) brightness = 254
 
   //console.log("New Hex: "+Hexval)
 
@@ -1271,7 +1283,8 @@ app.post('/setLight', (req, res) => {
 //Get all lights
 app.post('/getAllLights', (req, res) => {
 
- var HomeID = req.body,HomeID
+  var HomeID = req.body,
+    HomeID
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
@@ -1343,9 +1356,6 @@ app.post('/getAllLights', (req, res) => {
 
 app.post('/searchLight', (req, res) => {
 
-  // console.log("Body: ")
-  // console.log(req.body)
-  //var LightId = req.body.LightId
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
@@ -1775,12 +1785,11 @@ function getHueCreds(uid) {
         if (err) {
           reject(err);
           console.log(err)
-        }
-        else{
+        } else {
           console.log(result);
           resolve(result);
         }
-        
+
       })
       client.close();
     })
@@ -1819,7 +1828,7 @@ function getLightfromDB(DeviceID) {
 app.post('/notification/addRegis', (req, res) => {
   var RegisID = req.body.RegisID
 
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var uid = resolve.uid
 
@@ -1830,8 +1839,8 @@ app.post('/notification/addRegis', (req, res) => {
       password: "",
       database: "uhomesql"
     });
-    
-    con.connect(function(err) {
+
+    con.connect(function (err) {
       if (err) throw err;
       console.log("Connected!");
 
@@ -1846,184 +1855,179 @@ app.post('/notification/addRegis', (req, res) => {
         })
         console.log("1 record inserted");
 
-    });
-  })
+      });
+    })
 
-  }).catch(function(reject){
-    
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
-  
-  app.post('/admin/add/Estimote/App', (req, res) => {
-    var AppID = req.body.AppID
-    var AppToken = req.body.AppToken
-    var HomeID = req.body.HomeID
-  
-    var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
-  
-      var con = mysql.createConnection({
-        host: "127.0.0.1",
-        user: "root",
-        password: "",
-        database: "uhomesql"
-      });
-      
-      con.connect(function(err) {
-        if (err) throw err;
-        console.log("Connected!");
-  
-        var sql = `INSERT INTO estimote_key (HomeID, AppID, AppToken) VALUES ('${HomeID}', '${AppID}', '${AppToken}')`;
-  
-        con.query(sql, function (err, result) {
-          if (err) res.send({
-            "message": err
-          })
-          res.send({
-            message: "1 record inserted"
-          })
-  
-      });
-    })
-  
-    }).catch(function(reject){
-      
-      res.status(401).send(reject.error)
+
+app.post('/admin/add/Estimote/App', (req, res) => {
+  var AppID = req.body.AppID
+  var AppToken = req.body.AppToken
+  var HomeID = req.body.HomeID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
     });
+
+    con.connect(function (err) {
+      if (err) throw err;
+      console.log("Connected!");
+
+      var sql = `INSERT INTO estimote_key (HomeID, AppID, AppToken) VALUES ('${HomeID}', '${AppID}', '${AppToken}')`;
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        res.send({
+          message: "1 record inserted"
+        })
+
+      });
     })
 
-    function getEstimoteKey(HomeID){
-      return new Promise((resolve,reject)=>{
+  }).catch(function (reject) {
 
-        var con = mysql.createConnection({
-          host: "127.0.0.1",
-          user: "root",
-          password: "",
-          database: "uhomesql"
-        });
+    res.status(401).send(reject.error)
+  });
+})
 
-        var sql = `SELECT * FROM estimote_key WHERE HomeID = ${HomeID}`
-        
-        con.connect(function(err) {
-          if (err) reject(err)
-          con.query(sql, function (err, result, fields) {
-            if (err) reject(err)
-            console.log(result)
-            resolve(result)
-          });
-        });
+function getEstimoteKey(HomeID) {
+  return new Promise((resolve, reject) => {
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    var sql = `SELECT * FROM estimote_key WHERE HomeID = ${HomeID}`
+
+    con.connect(function (err) {
+      if (err) reject(err)
+      con.query(sql, function (err, result, fields) {
+        if (err) reject(err)
+        console.log(result)
+        resolve(result)
+      });
+    });
+
+  })
+}
+
+function compareEstimoteBeacon(identifier) {
+
+  return new Promise((resolve, reject) => {
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        reject(err)
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("devices")
+
+      collection.findOne({
+        Identifier: identifier
+      }, (err, result) => {
+        if (err) {
+          reject(err);
+          console.log(err)
+        }
+        console.log("Result = " + result);
+        if (result == null) {
+          resolve(false)
+        } else {
+          resolve(true)
+        }
 
       })
+      client.close();
+    })
+  })
+}
+
+function insertHueCred(value, uid) {
+  return new Promise((resolve, reject) => {
+
+
+    if (!value) {
+      console.log("no fucking value in here")
+      reject(value)
     }
+    value.uid = uid
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        reject(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
 
-    function compareEstimoteBeacon(identifier) {
-
-      return new Promise((resolve, reject) => {
-        MongoClient.connect(uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true
-        }, (err, client) => {
-          if (err) {
-            console.error(err)
-            reject(err)
-          }
-          const db = client.db(dbname)
-          const collection = db.collection("devices")
-    
-          collection.findOne({
-            Identifier: identifier
-          }, (err, result) => {
-            if (err) {
-              reject(err);
-              console.log(err)
-            }
-            console.log("Result = " + result);
-            if(result == null)
-            {
-              resolve(false)
-            }
-            else{
-              resolve(true)
-            }
-            
-          })
-          client.close();
-        })
+      collection.insertOne(value, (err, result) => {
+        if (err) {
+          console.log(err)
+          reject(err)
+        } else {
+          console.log(err)
+          resolve(result)
+        }
       })
-    }
 
-    function insertHueCred(value,uid) {
-      return new Promise((resolve,reject)=>{
-  
-  
-        if(!value){
-          console.log("no fucking value in here")
-          reject(value)
-        } 
-        value.uid = uid
-        MongoClient.connect(uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true
-        }, (err, client) => {
-          if (err) {
-            console.error(err)
-            reject(err)
-            return
-          }
-          const db = client.db(dbname)
-          const collection = db.collection("HueCred")
-  
-          collection.insertOne(value, (err, result) => {
-            if (err){
-              console.log(err)
-              reject(err)
-            } 
-            else{
-              console.log(err)
-              resolve(result)
-            } 
-          })
-  
-          client.close();
-        })
-      })
-    }
+      client.close();
+    })
+  })
+}
 
-    function insertHueCredHome(value,HomeID) {
-      return new Promise((resolve,reject)=>{
-  
-  
-        if(!value){
-          console.log("no fucking value in here")
-          reject(value)
-        } 
-        value.HomeID = HomeID
-        MongoClient.connect(uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true
-        }, (err, client) => {
-          if (err) {
-            console.error(err)
-            reject(err)
-            return
-          }
-          const db = client.db(dbname)
-          const collection = db.collection("HueCred")
-  
-          collection.insertOne(value, (err, result) => {
-            if (err){
-              console.log(err)
-              reject(err)
-            } 
-            else{
-              console.log(err)
-              resolve(result)
-            } 
-          })
-  
-          client.close();
-        })
-      })
+function insertHueCredHome(value, HomeID) {
+  return new Promise((resolve, reject) => {
+
+
+    if (!value) {
+      console.log("no fucking value in here")
+      reject(value)
     }
-  
+    value.HomeID = HomeID
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        reject(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("HueCred")
+
+      collection.insertOne(value, (err, result) => {
+        if (err) {
+          console.log(err)
+          reject(err)
+        } else {
+          console.log(err)
+          resolve(result)
+        }
+      })
+
+      client.close();
+    })
+  })
+}
