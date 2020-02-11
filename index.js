@@ -2,6 +2,7 @@ const express = require('express')
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const hue = require('./hue')
+const noti = require('./notification')
 const https = require('https');
 const mysql = require('mysql');
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
@@ -9,7 +10,7 @@ const ObjectId = require('mongodb').ObjectID;
 const app = express();
 const cors = require('cors')
 const authen = require('./authen')
-const Sync = require('sync');
+
 
 var randomstring = require("randomstring");
 
@@ -134,41 +135,21 @@ app.post('/getEstimoteKey', (req, res) => {
 
     var result = await getEstimoteKey(HomeID)
 
-    if (result != null) {
-      res.send({
-        AppID: result[0].AppID,
-        AppToken: result[0].AppToken
-      })
-
-    } else res.send({
-      message: "No AppID and AppToken in database."
-    })
-  }).catch(function (reject) {
-
-    res.status(401).send(reject.error)
-  });
-})
-
-app.post('/getEstimoteKey', (req, res) => {
-
-  var HomeID = req.body.HomeID
-  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-
-    var result = await getEstimoteKey(HomeID)
-
-    if (result != null) {
+    if (result.length != 0) {
       res.send({
         AppID: result[0].AppID,
         AppToken: result[0].AppToken,
         EstimoteKeyExists: true
       })
-
-    } else res.send({
-      message: "No AppID and AppToken in database.",
-      EstimoteKeyExists: false
-    })
+      
+    } else {
+      res.send({
+        message: "No AppID and AppToken in database.",
+        EstimoteKeyExists: false
+      })
+    }
+ 
   }).catch(function (reject) {
-
     res.status(401).send(reject.error)
   });
 })
@@ -250,14 +231,6 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
       })
 
     })
-    // .catch(function (reject) {
-    //   res.send({
-    //     message: reject
-    //   })
-    // })
-
-
-
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -1320,7 +1293,7 @@ app.post('/getAllLights', (req, res) => {
         client.close();
       })
 
-      var run = () => {``
+      var run = () => {
         return query1.then(async function (resolve) {
 
           var access = resolve.tokens.access.value,
