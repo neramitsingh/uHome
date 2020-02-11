@@ -1296,17 +1296,6 @@ app.post('/getAllLights', (req, res) => {
             }
           
           }))
-
-          // lights.forEach(light => {
-          //   var obj = {
-          //     "LightID": light._id,
-          //     "Name": light.name,
-          //     "Select": false
-          //   }
-
-          //   LightArr.push(obj)
-          // })
-
           res.send({
             "message": LightArr
           })
@@ -2031,14 +2020,11 @@ function compareLights(LightID, LightsAtHome) {
 
     //let flag = false;
 
-    
+    var arr = []   
 
       var loop = async () =>{
         //return new Promise(async (resolve, reject) => {
           return await Promise.all(LightsAtHome.map((device)=>{
-
-            var arr = []    
-    
             MongoClient.connect(uri, {
               useNewUrlParser: true,
               useUnifiedTopology: true
@@ -2058,6 +2044,7 @@ function compareLights(LightID, LightsAtHome) {
                   console.log(err)
                 }
                 //console.log("Result = " + JSON.stringify(result));
+                if(result != null)
                 if (result.Info.id == LightID) {
                   //resolve(true) //Light already exist at home
                   arr.push("true")
@@ -2080,16 +2067,23 @@ function compareLights(LightID, LightsAtHome) {
       //})
      }
 
-     var check = await loop().then(function (resolve){
-       console.log(resolve.toString())
-      if(resolve.includes("true")){
+     
+
+     var check = await loop().then(function (){
+      setTimeout(function(){
+        //console.log(check.toString())
+      if(arr.includes("true")){
         console.log("Found it")
         resolve(true)
       }
       else{
         console.log("Suckaaa")
+        resolve(false)
       } 
-      })
+
+      },1000)
+    })
+       
      })
       
 
