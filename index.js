@@ -853,6 +853,7 @@ app.post('/api/stoptimer', (req, res) => {
 //Add Device to uHome //TODO: implement individual insert to both DBs
 app.post('/admin/addDevice/Hue', (req, res) => {
   
+  //var HomeID = req.body.HomeID
   var LightObjs = req.body.message;
 
   console.log(LightObjs)
@@ -1122,6 +1123,7 @@ app.post('/switchLight', (req, res) => {
   // console.log("Body: ")
   // console.log(req.body)
   var DeviceID = req.body.DeviceID
+  var HomeID = req.body.HomeID
 
   console.log("DeviceID = " + DeviceID)
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
@@ -1134,7 +1136,7 @@ app.post('/switchLight', (req, res) => {
     console.log(LightID);
 
 
-    var HueCred = getHueCreds(uid).then(async function (resolve) {
+    var HueCred = getHueCreds(HomeID).then(async function (resolve) {
 
       var access = resolve.tokens.access.value,
         refresh = resolve.tokens.refresh.value,
@@ -1198,6 +1200,7 @@ app.post('/setLight', (req, res) => {
   // console.log("Body: ")
   // console.log(req.body)
   var DeviceID = req.body.DeviceID
+  var HomeID = req.body.HomeID
 
   var Hex = req.body.Hex
 
@@ -1232,7 +1235,7 @@ app.post('/setLight', (req, res) => {
     console.log(LightID);
 
 
-    var HueCred = getHueCreds(uid).then(async function (resolve) {
+    var HueCred = getHueCreds(HomeID).then(async function (resolve) {
 
       var access = resolve.tokens.access.value,
         refresh = resolve.tokens.refresh.value,
@@ -1277,32 +1280,32 @@ app.post('/getAllLights', (req, res) => {
 
           var LightArr = []
 
-          // await Promise.all(lights.map(async (light)=>{
+          await Promise.all(lights.map(async (light)=>{
 
-          //   var result = await compareLights(light._id,LightsAtHome)
+            var result = await compareLights(light._id,LightsAtHome)
 
-          //   if(result == false){
+            if(result == false){
 
-          //     var obj = {
-          //       "LightID": light._id,
-          //       "Name": light.name,
-          //       "select": false
-          //     }
+              var obj = {
+                "LightID": light._id,
+                "Name": light.name,
+                "Select": false
+              }
   
-          //     LightArr.push(obj)
-          //   }
-          
-          // }))
-
-          lights.forEach(light => {
-            var obj = {
-              "LightID": light._id,
-              "Name": light.name,
-              "Select": false
+              LightArr.push(obj)
             }
+          
+          }))
 
-            LightArr.push(obj)
-          })
+          // lights.forEach(light => {
+          //   var obj = {
+          //     "LightID": light._id,
+          //     "Name": light.name,
+          //     "Select": false
+          //   }
+
+          //   LightArr.push(obj)
+          // })
 
           res.send({
             "message": LightArr
@@ -2030,58 +2033,66 @@ function compareLights(LightID, LightsAtHome) {
 
     
 
-      var check = await Promise.all(LightsAtHome.map((device)=>{
+      var loop = async () =>{
+        //return new Promise(async (resolve, reject) => {
+          return await Promise.all(LightsAtHome.map((device)=>{
 
-        var arr = []    
-
-        MongoClient.connect(uri, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true
-        }, (err, client) => {
-          if (err) {
-            console.error(err)
-            reject(err)
-          }
-          const db = client.db(dbname)
-          const collection = db.collection("devices")
+            var arr = []    
     
-          collection.findOne({
-            DeviceID: Number(device.DeviceID)
-          }, (err, result) => {
-            if (err) {
-              reject(err);
-              console.log(err)
-            }
-            //console.log("Result = " + JSON.stringify(result));
-            if (result.Info.id == LightID) {
-              //resolve(true) //Light already exist at home
-              arr.push("true")
-              console.log("Found a match: " + result.Info.id + "  =  " + LightID)
-            }
-             else {
-              arr.push("false")
-              console.log("Nope")
-            }
-          })
-          client.close();
-        })
-
-        if(arr.length == LightsAtHome){
-          resolve(arr)
-        }
+            MongoClient.connect(uri, {
+              useNewUrlParser: true,
+              useUnifiedTopology: true
+            }, (err, client) => {
+              if (err) {
+                console.error(err)
+                reject(err)
+              }
+              const db = client.db(dbname)
+              const collection = db.collection("devices")
         
-      }))
+              collection.findOne({
+                DeviceID: Number(device.DeviceID)
+              }, (err, result) => {
+                if (err) {
+                  reject(err);
+                  console.log(err)
+                }
+                //console.log("Result = " + JSON.stringify(result));
+                if (result.Info.id == LightID) {
+                  //resolve(true) //Light already exist at home
+                  arr.push("true")
+                  console.log("Found a match: " + result.Info.id + "  =  " + LightID)
+                }
+                 else {
+                  arr.push("false")
+                  console.log("Nope")
+                }
+              })
+              client.close();
+            })
     
-    
-      //console.log(arr.toString())
+            if(arr.length == LightsAtHome.length){
+              resolve(arr)
+            }
+            
+          }))
+        
+      //})
+     }
 
-    if(check.includes("true")){
-      console.log("Found it")
-      resolve(true)
-    }
-    else{
-      console.log("Suckaaa")
-    } 
-    })
+     var check = await loop().then(function (resolve){
+       console.log(resolve.toString())
+      if(resolve.includes("true")){
+        console.log("Found it")
+        resolve(true)
+      }
+      else{
+        console.log("Suckaaa")
+      } 
+      })
+     })
+      
+
+    
 
 }
