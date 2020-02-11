@@ -1277,31 +1277,32 @@ app.post('/getAllLights', (req, res) => {
 
           var LightArr = []
 
-          await Promise.all(lights.map(async (light)=>{
+          // await Promise.all(lights.map(async (light)=>{
 
-            var result = await compareLights(light._id,LightsAtHome)
+          //   var result = await compareLights(light._id,LightsAtHome)
 
-            if(result == false){
+          //   if(result == false){
 
-              var obj = {
-                "LightID": light._id,
-                "Name": light.name,
-                "select": false
-              }
+          //     var obj = {
+          //       "LightID": light._id,
+          //       "Name": light.name,
+          //       "select": false
+          //     }
   
-              LightArr.push(obj)
-            }
-          
-          }))
-
-          // lights.forEach(light => {
-          //   var obj = {
-          //     "LightID": light._id,
-          //     "Name": light.name
+          //     LightArr.push(obj)
           //   }
+          
+          // }))
 
-          //   LightArr.push(obj)
-          // })
+          lights.forEach(light => {
+            var obj = {
+              "LightID": light._id,
+              "Name": light.name,
+              "Select": false
+            }
+
+            LightArr.push(obj)
+          })
 
           res.send({
             "message": LightArr
@@ -2027,10 +2028,11 @@ function compareLights(LightID, LightsAtHome) {
 
     //let flag = false;
 
-    var arr = []    
+    
 
-    var check = async () =>{
-      await Promise.all(LightsAtHome.map((device)=>{
+      var check = await Promise.all(LightsAtHome.map((device)=>{
+
+        var arr = []    
 
         MongoClient.connect(uri, {
           useNewUrlParser: true,
@@ -2063,14 +2065,17 @@ function compareLights(LightID, LightsAtHome) {
           })
           client.close();
         })
+
+        if(arr.length == LightsAtHome){
+          resolve(arr)
+        }
         
       }))
-    }
     
-    await check().then(function (){
-      console.log(arr.toString())
+    
+      //console.log(arr.toString())
 
-    if(arr.includes("true")){
+    if(check.includes("true")){
       console.log("Found it")
       resolve(true)
     }
@@ -2079,10 +2084,4 @@ function compareLights(LightID, LightsAtHome) {
     } 
     })
 
-    
-
-    
-
-    
-  })
 }
