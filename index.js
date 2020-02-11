@@ -141,7 +141,7 @@ app.post('/getEstimoteKey', (req, res) => {
         AppToken: result[0].AppToken,
         EstimoteKeyExists: true
       })
-      
+
     } else {
       res.send({
         message: "No AppID and AppToken in database.",
@@ -1262,58 +1262,46 @@ app.post('/getAllLights', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
-    console.log("HomeID: "+HomeID)
+    var LightsAtHome = await getLightsAtHome(HomeID)
 
-    //console.log(resolve)
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        res.send(err)
-      }
-      const db = client.db(dbname)
-      const collection = db.collection("HueCred")
-
-      var query1 = new Promise((resolve, reject) => {
-        console.log("### Query 1 ###")
-        collection.findOne({
-          HomeID: Number(HomeID)
-        }, (err, result) => {
-          if (err) {
-            reject(err);
-            console.log(err)
-          }
-          console.log(result);
-          resolve(result);
-
-        })
-
-        client.close();
-      })
-
-      var run = () => {
-        return query1.then(async function (resolve) {
+    await getHueCreds(HomeID).then(async function (resolve) {
 
           var access = resolve.tokens.access.value,
             refresh = resolve.tokens.refresh.value,
             username = resolve.username,
             expire = resolve.tokens.refresh.expiresAt
+
           var lights = await hue.getAllLights(access, refresh, username);
           //console.log(resolve)
           console.log(lights)
 
           var LightArr = []
 
-          lights.forEach(light => {
-            var obj = {
-              "LightID": light._id,
-              "Name": light.name
-            }
+          await Promise.all(lights.map(async (light)=>{
 
-            LightArr.push(obj)
-          })
+            var result = await compareLights(light._id,LightsAtHome)
+
+            if(result == false){
+
+              var obj = {
+                "LightID": light._id,
+                "Name": light.name,
+                "select": false
+              }
+  
+              LightArr.push(obj)
+            }
+          
+          }))
+
+          // lights.forEach(light => {
+          //   var obj = {
+          //     "LightID": light._id,
+          //     "Name": light.name
+          //   }
+
+          //   LightArr.push(obj)
+          // })
 
           res.send({
             "message": LightArr
@@ -1321,9 +1309,8 @@ app.post('/getAllLights', (req, res) => {
         }).catch(function (reject) {
           res.send(reject.err)
         })
-      }
-      run();
-    })
+      
+    
   }).catch(function (reject) {
     res.status(401).send(reject.error)
   });
@@ -2005,5 +1992,97 @@ function insertHueCredHome(value, HomeID) {
 
       client.close();
     })
+  })
+}
+
+function getLightsAtHome(HomeID) {
+  return new Promise((resolve, reject) => {
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    var sql = `SELECT device.DeviceID FROM ((device INNER JOIN room ON device.RoomID = room.RoomID) INNER JOIN home on room.HomeID = home.HomeID) where home.HomeID = ${HomeID}`
+
+    con.connect(function (err) {
+      if (err) reject(err)
+      con.query(sql, function (err, result, fields) {
+        if (err) reject(err)
+        console.log(result)
+        resolve(result)
+      });
+    });
+
+  })
+}
+
+function compareLights(LightID, LightsAtHome) {
+
+  console.log("Comparing: **********************")
+
+  return new Promise(async (resolve, reject) => {
+
+    //let flag = false;
+
+    var arr = []    
+
+    var check = async () =>{
+      await Promise.all(LightsAtHome.map((device)=>{
+
+        MongoClient.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        }, (err, client) => {
+          if (err) {
+            console.error(err)
+            reject(err)
+          }
+          const db = client.db(dbname)
+          const collection = db.collection("devices")
+    
+          collection.findOne({
+            DeviceID: Number(device.DeviceID)
+          }, (err, result) => {
+            if (err) {
+              reject(err);
+              console.log(err)
+            }
+            //console.log("Result = " + JSON.stringify(result));
+            if (result.Info.id == LightID) {
+              //resolve(true) //Light already exist at home
+              arr.push("true")
+              console.log("Found a match: " + result.Info.id + "  =  " + LightID)
+            }
+             else {
+              arr.push("false")
+              console.log("Nope")
+            }
+          })
+          client.close();
+        })
+        
+      }))
+    }
+    
+    await check().then(function (){
+      console.log(arr.toString())
+
+    if(arr.includes("true")){
+      console.log("Found it")
+      resolve(true)
+    }
+    else{
+      console.log("Suckaaa")
+    } 
+    })
+
+    
+
+    
+
+    
   })
 }
