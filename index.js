@@ -2505,13 +2505,15 @@ con.connect(function(err) {
   if (err) throw err;
   //console.log("Connected!");
 
-  var sql = `SELECT RegisID FROM user_noti WHERE UserID = ${uid}`
+  var sql = `SELECT RegisID FROM user_noti WHERE UserID = "${uid}"`
 
-  con.query(uid, function (err, result, fields) {
+  con.query(sql, function (err, result, fields) {
     if (err) throw err;
     console.log(result);
 
-    var value = [result[result.length - 1]]
+    var value = [result[result.length - 1].RegisID]
+
+    console.log("Value : " + JSON.stringify(result[result.length - 1]))
 
     noti.findPhone(value)
 
