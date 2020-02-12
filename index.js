@@ -1128,18 +1128,22 @@ app.post('/api/getUserActivity', (req, res) => {
 
      collection.find(query).toArray(function(err, result) {
       if (err) throw err;
-      console.log(result);
+   
+     // if(result.length != 0){
+        var toSend = calculateUserActivity(result).then(function (resolve){
 
-      console.log(result[0].StopTimer[0])
-
-      ///// TODO: Here /////////
-
-      var toSend = calculateUserActivity(result).then(function (resolve){
-
-        res.send({
-          message: resolve
+          res.send({
+            message: resolve
+          })
         })
-      })
+      //}
+      // else{
+      //   res.send({
+      //     message: "No data found"
+      //   })
+      // }
+
+      
 
       
     });
@@ -2515,16 +2519,23 @@ con.connect(function(err) {
 
     console.log("Value : " + JSON.stringify(result[result.length - 1]))
 
-    noti.findPhone(value)
+    if(result.length != 0){
+      noti.findPhone(value)
+      res.send({
+        message: "Ringing..."
+      })
+    }
+    else res.send({
+      message: "No Regis Token Found"
+    })
+    
 
   });
 
 
 });
 
-res.send({
-  message: "Ringing..."
-})
+
 
 
   }).catch(function(reject){
