@@ -271,7 +271,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
                       
                         "data": {
                           "payload":{
-                            "RoomID": est.RoomID,
+                            "RoomID": est.RoomID.toString(),
                             "Name": result[0].Name,
                             "Type": result[0].Type
                           }
