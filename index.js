@@ -165,7 +165,8 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
     var EstimoteKey = await getEstimoteKey(HomeID)
 
-
+    var AppID = EstimoteKey[0].AppID
+    var AppToken = EstimoteKey[0].AppToken
 
     EstObjs.forEach(est => {
 
@@ -177,7 +178,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
         database: "uhomesql"
       });
 
-      con.connect(function (err) {
+      con.connect(async function (err) {
         if (err) res.send({
           "message": error
         })
@@ -215,7 +216,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
               collection.insertOne(obj, (err, result) => {
                 if (err) res.send(err)
-                else res.send(result)
+                //else console.log(result)
               })
 
               client.close();
@@ -224,13 +225,207 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
           }
         });
 
+        ////////////////////////////////////////////////////////////////////
+
+       await getEstimoteBeaconAttachments(AppID,AppToken).then(function (resolve){
+
+        var arr = []
+
+        var attachments = resolve
+
+          attachments.forEach(attachment =>{
+
+            if(attachment.identifier != null){
+              if(attachment.identifier == est.Info.identifier){
+
+                console.log("Found attachment")
+                arr.push([attachment.identifier,attachment.id])
+
+              }
+            }
+          })
+
+            if(arr.length == 1){
+
+              var con = mysql.createConnection({
+                host: "127.0.0.1",
+                user: "root",
+                password: "",
+                database: "uhomesql"
+              });
+          
+              con.connect(async function (err) {
+                if (err) res.send({
+                  "message": err
+                })
+          
+                var sql = `SELECT * FROM room WHERE RoomID = '${est.RoomID}' `
+          
+                con.query(sql, function (err, result) {
+                  if (err) res.send({
+                    "message": err
+                  })
+                  else{
+
+                    var body = JSON.stringify({
+                      
+                        "data": {
+                          "payload":{
+                            "RoomID": est.RoomID,
+                            "Name": result[0].Name,
+                            "Type": result[0].Type
+                          }
+                        }
+                    })
+  
+                    var options = {
+                      hostname: 'cloud.estimote.com',
+                      path: `/v3/attachments/${arr[0][1]}`,
+                      method: 'PATCH',
+                      //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+                      auth: `${AppID}:${AppToken}`,
+                      headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                        'Content-Type': 'application/json',
+                        'Content-Length' : body.length
+                      }
+                      
+                    };
+                
+                    var req = https.request(options, function (resp) {
+                      console.log("statusCode: ", res.statusCode);
+                      console.log("headers: ", res.headers);
+                
+                      resp.on('data', async function (d) {
+                
+                        var k = JSON.parse(d)
+                        
+                        console.log("************** Response from Estimote API: ***********************")
+                        console.log(JSON.stringify(k))
+  
+                
+                    });
+                  })
+                    req.write(body);
+                    req.end();
+                
+                    req.on('error', function (e) {
+                      console.error(e);
+                      //reject(e)
+                    });
+                  
+  
+                  }
+                    
+                })
+                })
+  
+            
+          }
+          else{
+
+            var con = mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "",
+              database: "uhomesql"
+            });
+        
+            con.connect(async function (err) {
+              if (err) res.send({
+                "message": err
+              })
+        
+              var sql = `SELECT * FROM room WHERE RoomID = '${est.RoomID}' `
+        
+              con.query(sql, function (err, result) {
+                if (err) res.send({
+                  "message": err
+                })
+                else{
+
+                  var body = JSON.stringify({
+                    
+                      "data": {
+                        "payload":{
+                          "RoomID": est.RoomID,
+                          "Name": result[0].Name,
+                          "Type": result[0].Type
+                        },
+                        "identifier": est.Info.identifier,
+                        "for": "device"
+                      }
+                  })
+
+                  var options = {
+                    hostname: 'cloud.estimote.com',
+                    path: `/v3/attachments`,
+                    method: 'POST',
+                    //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+                    auth: `${AppID}:${AppToken}`,
+                    headers: {
+                      'Access-Control-Allow-Origin': '*',
+                      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                      'Content-Type': 'application/json',
+                      'Content-Length' : body.length
+                    }
+                    
+                  };
+              
+                  var req = https.request(options, function (resp) {
+                    console.log("statusCode: ", res.statusCode);
+                    console.log("headers: ", res.headers);
+              
+                    resp.on('data', async function (d) {
+              
+                      var k = JSON.parse(d)
+                      
+                      console.log("************** Response from Estimote API: ***********************")
+                      console.log(JSON.stringify(k))
+
+              
+                  });
+                })
+                  req.write(body);
+                  req.end();
+              
+                  req.on('error', function (e) {
+                    console.error(e);
+                    //reject(e)
+                  });
+                
+
+                }
+                  
+              })
+              })
+          }
+  
+          }).catch(function (reject){
+  
+        
+          })
+
+          
+        
+
+
+
+
+
+
+
+        ///////////////////////////////////////////////////////////////////
+
       })
+    })
 
       res.send({
         "message": "Devices added"
       })
 
-    })
+    
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -2085,8 +2280,50 @@ function compareLights(LightID, LightsAtHome) {
     })
        
      })
-      
-
     
+}
 
+function getEstimoteBeaconAttachments(AppID,AppToken){
+  console.log(AppID + " : " + AppToken)
+  console.log("Started getting attachments")
+  return new Promise((resolve,reject)=>{
+    var options = {
+      hostname: 'cloud.estimote.com',
+      path: '/v3/attachments',
+      method: 'GET',
+      //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+      auth: `${AppID}:${AppToken}`,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+        'Content-Type': 'application/json'
+      },
+      //ciphers: 'DES-CBC3-SHA'
+    };
+
+    var req = https.request(options, function (resp) {
+      console.log("statusCode: ", resp.statusCode);
+      console.log("headers: ", resp.headers);
+
+      resp.on('data', async function (d) {
+
+        //process.stdout.write(d)
+
+        console.log("Response here")
+        //console.log(d)
+        var k = JSON.parse(d)
+        console.log(JSON.stringify(k.data))
+        resolve(k.data)
+
+    });
+  })
+
+    req.end();
+
+    req.on('error', function (e) {
+      console.error(e);
+      reject(e)
+    });
+  
+  })
 }
