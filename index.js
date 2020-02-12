@@ -986,15 +986,22 @@ app.post('/user/getDevices/Estimote/Beacon/Show', (req, res) => {
 
 app.post('/api/starttimer', (req, res) => {
 
+  var RoomID = req.body.RoomID
+  var Name = req.body.Name
+  var Type = req.body.Type
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     console.log("-----------------------Starting Timer--------------------------")
 
     const timer = {
       uid: resolve.uid,
-      time: Date.now(),
+      RoomID: RoomID,
+      Name: Name,
+      Type: Type,
+      StartTime: Date.now(),
       current: true,
     }
-    let id = resolve.uid
+
     let objectid;
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -1012,7 +1019,6 @@ app.post('/api/starttimer', (req, res) => {
         if (err) res.send(err)
         else {
           objectid = timer._id
-          timer.time = timer.time.toString()
           res.status(200).send(timer)
 
           setTimeout(function (timer) {
@@ -1064,6 +1070,9 @@ app.post('/api/stoptimer', (req, res) => {
       var newvalues = {
         $set: {
           current: false
+        },
+        $push: {
+          StopTimer: Date.now()
         }
       };
 
@@ -1210,12 +1219,12 @@ app.post('/checkHueCred', (req, res) => {
 
       if (resolve == null) {
         res.send({
-          //"HueCredexists": hueCredexists,
+          
           "hasHueCred": false
         })
       } else {
         res.send({
-          //"HueCredexists": hueCredexists,
+          
           "hasHueCred": true
         })
 
