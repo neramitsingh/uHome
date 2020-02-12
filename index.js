@@ -1199,22 +1199,24 @@ app.post('/admin/addDevice/Hue', (req, res) => {
 
 app.post('/checkHueCred', (req, res) => {
 
+  var HomeID = req.body.HomeID
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     var uid = resolve.uid
 
 
-    var HueCred = getHueCreds(uid).then(async function (resolve) {
+    var HueCred = getHueCreds(HomeID).then(async function (resolve) {
       console.log(resolve)
 
       if (resolve == null) {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred": true
+          "hasHueCred": false
         })
       } else {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred": false
+          "hasHueCred": true
         })
 
       }
