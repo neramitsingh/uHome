@@ -1100,6 +1100,61 @@ app.post('/api/stoptimer', (req, res) => {
   });
 });
 
+app.post('/api/getUserActivity', (req, res) => {
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    let id = resolve.uid
+    let objectid = req.body._id;
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("timer")
+
+      var query = {
+        $and : [
+          {uid: id},
+          {current: false}
+        ]
+      }
+
+     collection.find(query).toArray(function(err, result) {
+      if (err) throw err;
+      console.log(result);
+
+      console.log(result[0].StopTimer[0])
+
+      ///// TODO: Here /////////
+
+      var toSend = calculateUserActivity(result).then(function (resolve){
+
+        res.send({
+          message: resolve
+        })
+      })
+
+      
+    });
+
+    client.close();
+
+    })
+
+  }).catch(function (reject) {
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+});
+
 
 
 
@@ -1221,7 +1276,6 @@ app.post('/checkHueCred', (req, res) => {
 
       if (resolve == null) {
         res.send({
-          
           "hasHueCred": false
         })
       } else {
@@ -1229,19 +1283,12 @@ app.post('/checkHueCred', (req, res) => {
           
           "hasHueCred": true
         })
-
       }
-
-
     }).catch(function (reject) {
       res.send({
         "message": reject
       })
     })
-
-
-
-
   }).catch(function (reject) {
     res.status(401).send(reject.error)
   });
@@ -2390,5 +2437,53 @@ function getEstimoteBeaconAttachments(AppID,AppToken){
       reject(e)
     });
   
+  })
+}
+
+function calculateUserActivity(result){
+  return new Promise((resolve,reject)=>{
+
+    var arr = {}
+
+    for(let i = 0; i < result.length; i++){
+
+      var stop = (result[i].StopTimer[0])
+
+      if(!(`${result[i].RoomID}` in arr)){
+
+        // let date1 = Date(result[i].StopTimer[0])
+        // let date2 = Date(result[i].StartTimer)
+
+        var date1 = Number(result[i].StopTimer[0])
+        var date2 = Number(result[i].StartTime)
+
+        console.log(typeof date1)
+        console.log(typeof date2)
+
+        console.log("Date 1: " +  date1)
+        console.log("Date 2: " + date2)
+
+        //arr[`${result[i].RoomID}`] = (result[i].StopTimer[0]) - result[i].StartTimer
+
+        arr[`${result[i].RoomID}`] = date1 - date2;
+    
+        console.log(arr[`${result[i].RoomID}`])
+      }
+      else{
+        let temp = arr[`${result[i].RoomID}`]
+
+        let dif = date1 - date2
+        console.log(dif)
+
+        arr[`${result[i].RoomID}`] = temp + dif
+      }
+    }
+
+    console.log(arr)
+
+    var arr2 = Object.entries(arr)
+
+    setTimeout(resolve(arr2),2000)
+    
   })
 }
