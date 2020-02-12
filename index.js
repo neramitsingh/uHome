@@ -2487,3 +2487,46 @@ function calculateUserActivity(result){
     
   })
 }
+
+app.post('/findPhone', (req, res) => {
+
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    uid = resolve.uid
+
+var con = mysql.createConnection({
+  host: "127.0.0.1",
+  user: "root",
+  password: "",
+  database: "uhomesql"
+});
+
+con.connect(function(err) {
+  if (err) throw err;
+  //console.log("Connected!");
+
+  var sql = `SELECT RegisID FROM user_noti WHERE UserID = "${uid}"`
+
+  con.query(uid, function (err, result, fields) {
+    if (err) throw err;
+    console.log(result);
+
+    var value = [result[result.length - 1]]
+
+    noti.findPhone(value)
+
+  });
+
+
+});
+
+res.send({
+  message: "Ringing..."
+})
+
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
