@@ -2505,7 +2505,7 @@ con.connect(function(err) {
   if (err) throw err;
   //console.log("Connected!");
 
-  var sql = `SELECT RegisID FROM user_noti WHERE UserID = "${uid}"`
+  var sql = `SELECT RegisID FROM user_noti WHERE UserID = ${uid}`
 
   con.query(uid, function (err, result, fields) {
     if (err) throw err;
