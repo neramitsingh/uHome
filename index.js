@@ -926,6 +926,58 @@ app.post('/user/getDevices/Hue', (req, res) => {
   });
 })
 
+app.post('/user/getDevices/Estimote/Beacon/Show', (req, res) => {
+
+  var RoomID = req.body.RoomID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    con.connect(async function (err) {
+      if (err) res.send({
+        "message": err
+      })
+
+      var sql = `SELECT DeviceID, Name FROM device WHERE RoomID = '${RoomID}' AND Type = "Estimote Beacon";`
+
+      con.query(sql, async function (err, result) {
+        if (err) res.send({
+          "message": err
+        })
+        else {
+
+          // await Promise.all(result.map(async (elem) => {
+
+          //   var light = await getLightfromDB(elem.DeviceID)
+
+          //   elem.on = light.On
+          //   elem.status = light.Status
+
+          // }))
+
+
+          res.send({
+            "message": result
+          })
+        }
+
+      })
+
+    });
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
 
 
 
