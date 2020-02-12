@@ -1209,12 +1209,12 @@ app.post('/checkHueCred', (req, res) => {
       if (resolve == null) {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred": false
+          "hasHueCred": true
         })
       } else {
         res.send({
           //"HueCredexists": hueCredexists,
-          "hasHueCred": true
+          "hasHueCred": false
         })
 
       }

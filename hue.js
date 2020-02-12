@@ -155,14 +155,21 @@ module.exports.setLight = function (ACCESS_TOKEN, REFRESH_TOKEN, USERNAME, Light
         .then(state => {
           // Display the state of the light
           console.log(JSON.stringify(state, null, 2));
+          
 
           var newState = new LightState().on().rgb(RGB).bri(brightness);
+
+          newState.populate({
+            "colormode": "xy"
+          })
           
 
           api.lights.setLightState(LightId, newState)
         })
         .then(result => {
           console.log(`Light state change was successful? ${result}`);
+
+          api.lights.getLightState(LightId).then()
         }).catch(err => {
           console.error(err);
         })
