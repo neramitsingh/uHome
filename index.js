@@ -271,6 +271,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
                       
                         "data": {
                           "payload":{
+                            "HomeID": result[0].HomeID,
                             "RoomID": est.RoomID.toString(),
                             "Name": result[0].Name,
                             "Type": result[0].Type
@@ -349,7 +350,8 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
                     
                       "data": {
                         "payload":{
-                          "RoomID": est.RoomID,
+                          "HomeID": result[0].HomeID,
+                          "RoomID": est.RoomID.toString(),
                           "Name": result[0].Name,
                           "Type": result[0].Type
                         },
@@ -993,12 +995,22 @@ app.post('/api/starttimer', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     console.log("-----------------------Starting Timer--------------------------")
 
+    var date = new Date()
+
+    var day = ('0'+ date.getDate()).slice(-2)
+    var month = ('0'+ (date.getMonth()+1)).slice(-2)
+    var year = date.getFullYear()
+
+    var dateString = `${day}/${month}/${year}`
+
+
     const timer = {
       uid: resolve.uid,
       RoomID: RoomID,
       Name: Name,
       Type: Type,
       StartTime: Date.now(),
+      Date: dateString,
       current: true,
     }
 
@@ -1100,10 +1112,12 @@ app.post('/api/stoptimer', (req, res) => {
 
 app.post('/api/getUserActivity', (req, res) => {
 
+  var date = req.body.date
+  var HomeID = req.body.HomeID
+
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     let id = resolve.uid
-    let objectid = req.body._id;
     MongoClient.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -1120,7 +1134,9 @@ app.post('/api/getUserActivity', (req, res) => {
       var query = {
         $and : [
           {uid: id},
-          {current: false}
+          {current: false},
+          {Date: date},
+          {HomeID: HomeID}
         ]
       }
 
@@ -1134,16 +1150,6 @@ app.post('/api/getUserActivity', (req, res) => {
             message: resolve
           })
         })
-      //}
-      // else{
-      //   res.send({
-      //     message: "No data found"
-      //   })
-      // }
-
-      
-
-      
     });
 
     client.close();
@@ -1156,6 +1162,34 @@ app.post('/api/getUserActivity', (req, res) => {
     res.status(401).send(reject.error)
   });
 });
+
+
+app.post('/home/getUserLocations', (req, res) => {
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+    
+    con.connect(function(err) {
+      if (err) throw err;
+      console.log("Connected!");
+    });
+    
+
+
+    
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
+
+
 
 
 
@@ -2451,10 +2485,7 @@ function calculateUserActivity(result){
 
       var stop = (result[i].StopTimer[0])
 
-      if(!(`${result[i].RoomID}` in arr)){
-
-        // let date1 = Date(result[i].StopTimer[0])
-        // let date2 = Date(result[i].StartTimer)
+      if(!(`${result[i].Name}` in arr)){ 
 
         var date1 = Number(result[i].StopTimer[0])
         var date2 = Number(result[i].StartTime)
@@ -2467,9 +2498,9 @@ function calculateUserActivity(result){
 
         //arr[`${result[i].RoomID}`] = (result[i].StopTimer[0]) - result[i].StartTimer
 
-        arr[`${result[i].RoomID}`] = date1 - date2;
+        arr[`${result[i].Name}`] = date1 - date2;
     
-        console.log(arr[`${result[i].RoomID}`])
+        //console.log(arr[`${result[i].RoomID}`])
       }
       else{
         let temp = arr[`${result[i].RoomID}`]
@@ -2477,13 +2508,25 @@ function calculateUserActivity(result){
         let dif = date1 - date2
         console.log(dif)
 
-        arr[`${result[i].RoomID}`] = temp + dif
+        arr[`${result[i].Name}`] = temp + dif
       }
     }
 
     console.log(arr)
 
     var arr2 = Object.entries(arr)
+
+    // var arr3 = []
+
+    // for(let i = 0; i<arr2.length; i++){
+       
+    //   if(i%2 == 0){
+    //     arr3[i].push(arr2[i])
+    //   }
+    //   else{
+    //     arr3[i-1].push(arr2[i][1])
+    //   }
+    // }
 
     setTimeout(resolve(arr2),2000)
     
