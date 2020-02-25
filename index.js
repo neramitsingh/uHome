@@ -1165,6 +1165,18 @@ app.post('/api/getUserActivity', (req, res) => {
 
 
 app.post('/home/getUserLocations', (req, res) => {
+
+  var arr = []
+
+  var HomeID = req.body.HomeID
+
+  var date = new Date()
+
+    var day = ('0'+ date.getDate()).slice(-2)
+    var month = ('0'+ (date.getMonth()+1)).slice(-2)
+    var year = date.getFullYear()
+
+    var dateString = `${day}/${month}/${year}`
   var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
 
     var con = mysql.createConnection({
@@ -1176,7 +1188,69 @@ app.post('/home/getUserLocations', (req, res) => {
     
     con.connect(function(err) {
       if (err) throw err;
-      console.log("Connected!");
+      
+      var query = `SELECT * FROM home_user WHERE HomeID = ${HomeID}`
+
+      con.query(query, async function (err, result, fields) {
+        if (err) throw err;
+
+        
+        await Promise.all(result.map(async (elem)=>{
+
+          var user = await authen.getUser(elem.UserID);
+
+          MongoClient.connect(uri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+          }, (err, client) => {
+            if (err) {
+              console.error(err)
+              res.send({
+                error: err
+              })
+            }
+            const db = client.db(dbname)
+            const collection = db.collection("timer")
+      
+            var query = {
+              $and : [
+                {uid: elem.UserID},
+                {current: true},
+                {Date: dateString},
+                {HomeID: HomeID}
+              ]
+            }
+      
+           collection.find(query).toArray(function(err, result) {
+            if (err) throw err;
+
+            var time = new Date(result[0].StartTime)
+
+            var hours = time.getHours()
+            var mins = time.getMinutes()
+      
+            var obj = {
+              UserID: elem.UserID,
+              RoomName: result[0].Name,
+              UserName: user.displayName,
+              EnterTime: `${hours}:${mins}`
+            }
+
+            arr.push(obj)
+              
+          });
+      
+          client.close();
+          })
+
+          res.send({
+            message: arr
+          })  
+        }))
+      
+      
+      
+      });
     });
     
 
