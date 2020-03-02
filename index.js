@@ -148,7 +148,7 @@ app.post('/getEstimoteKey', (req, res) => {
         EstimoteKeyExists: false
       })
     }
- 
+
   }).catch(function (reject) {
     res.status(401).send(reject.error)
   });
@@ -227,104 +227,25 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
         ////////////////////////////////////////////////////////////////////
 
-       await getEstimoteBeaconAttachments(AppID,AppToken).then(function (resolve){
+        await getEstimoteBeaconAttachments(AppID, AppToken).then(function (resolve) {
 
-        var arr = []
+          var arr = []
 
-        var attachments = resolve
+          var attachments = resolve
 
-          attachments.forEach(attachment =>{
+          attachments.forEach(attachment => {
 
-            if(attachment.identifier != null){
-              if(attachment.identifier == est.Info.identifier){
+            if (attachment.identifier != null) {
+              if (attachment.identifier == est.Info.identifier) {
 
                 console.log("Found attachment")
-                arr.push([attachment.identifier,attachment.id])
+                arr.push([attachment.identifier, attachment.id])
 
               }
             }
           })
 
-            if(arr.length == 1){
-
-              var con = mysql.createConnection({
-                host: "127.0.0.1",
-                user: "root",
-                password: "",
-                database: "uhomesql"
-              });
-          
-              con.connect(async function (err) {
-                if (err) res.send({
-                  "message": err
-                })
-          
-                var sql = `SELECT * FROM room WHERE RoomID = '${est.RoomID}' `
-          
-                con.query(sql, function (err, result) {
-                  if (err) res.send({
-                    "message": err
-                  })
-                  else{
-
-                    var body = JSON.stringify({
-                      
-                        "data": {
-                          "payload":{
-                            "HomeID": result[0].HomeID,
-                            "RoomID": est.RoomID.toString(),
-                            "Name": result[0].Name,
-                            "Type": result[0].Type
-                          }
-                        }
-                    })
-  
-                    var options = {
-                      hostname: 'cloud.estimote.com',
-                      path: `/v3/attachments/${arr[0][1]}`,
-                      method: 'PATCH',
-                      //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
-                      auth: `${AppID}:${AppToken}`,
-                      headers: {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-                        'Content-Type': 'application/json',
-                        'Content-Length' : body.length
-                      }
-                      
-                    };
-                
-                    var req = https.request(options, function (resp) {
-                      console.log("statusCode: ", res.statusCode);
-                      console.log("headers: ", res.headers);
-                
-                      resp.on('data', async function (d) {
-                
-                        var k = JSON.parse(d)
-                        
-                        console.log("************** Response from Estimote API: ***********************")
-                        console.log(JSON.stringify(k))
-  
-                
-                    });
-                  })
-                    req.write(body);
-                    req.end();
-                
-                    req.on('error', function (e) {
-                      console.error(e);
-                      //reject(e)
-                    });
-                  
-  
-                  }
-                    
-                })
-                })
-  
-            
-          }
-          else{
+          if (arr.length == 1) {
 
             var con = mysql.createConnection({
               host: "127.0.0.1",
@@ -332,32 +253,110 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
               password: "",
               database: "uhomesql"
             });
-        
+
             con.connect(async function (err) {
               if (err) res.send({
                 "message": err
               })
-        
+
               var sql = `SELECT * FROM room WHERE RoomID = '${est.RoomID}' `
-        
+
               con.query(sql, function (err, result) {
                 if (err) res.send({
                   "message": err
                 })
-                else{
+                else {
 
                   var body = JSON.stringify({
-                    
-                      "data": {
-                        "payload":{
-                          "HomeID": result[0].HomeID,
-                          "RoomID": est.RoomID.toString(),
-                          "Name": result[0].Name,
-                          "Type": result[0].Type
-                        },
-                        "identifier": est.Info.identifier,
-                        "for": "device"
+
+                    "data": {
+                      "payload": {
+                        "HomeID": result[0].HomeID,
+                        "RoomID": est.RoomID.toString(),
+                        "Name": result[0].Name,
+                        "Type": result[0].Type
                       }
+                    }
+                  })
+
+                  var options = {
+                    hostname: 'cloud.estimote.com',
+                    path: `/v3/attachments/${arr[0][1]}`,
+                    method: 'PATCH',
+                    //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
+                    auth: `${AppID}:${AppToken}`,
+                    headers: {
+                      'Access-Control-Allow-Origin': '*',
+                      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                      'Content-Type': 'application/json',
+                      'Content-Length': body.length
+                    }
+
+                  };
+
+                  var req = https.request(options, function (resp) {
+                    console.log("statusCode: ", res.statusCode);
+                    console.log("headers: ", res.headers);
+
+                    resp.on('data', async function (d) {
+
+                      var k = JSON.parse(d)
+
+                      console.log("************** Response from Estimote API: ***********************")
+                      console.log(JSON.stringify(k))
+
+
+                    });
+                  })
+                  req.write(body);
+                  req.end();
+
+                  req.on('error', function (e) {
+                    console.error(e);
+                    //reject(e)
+                  });
+
+
+                }
+
+              })
+            })
+
+
+          } else {
+
+            var con = mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "",
+              database: "uhomesql"
+            });
+
+            con.connect(async function (err) {
+              if (err) res.send({
+                "message": err
+              })
+
+              var sql = `SELECT * FROM room WHERE RoomID = '${est.RoomID}' `
+
+              con.query(sql, function (err, result) {
+                if (err) res.send({
+                  "message": err
+                })
+                else {
+
+                  var body = JSON.stringify({
+
+                    "data": {
+                      "payload": {
+                        "HomeID": result[0].HomeID,
+                        "RoomID": est.RoomID.toString(),
+                        "Name": result[0].Name,
+                        "Type": result[0].Type
+                      },
+                      "identifier": est.Info.identifier,
+                      "for": "device"
+                    }
                   })
 
                   var options = {
@@ -370,47 +369,47 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
                       'Access-Control-Allow-Origin': '*',
                       'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
                       'Content-Type': 'application/json',
-                      'Content-Length' : body.length
+                      'Content-Length': body.length
                     }
-                    
+
                   };
-              
+
                   var req = https.request(options, function (resp) {
                     console.log("statusCode: ", res.statusCode);
                     console.log("headers: ", res.headers);
-              
+
                     resp.on('data', async function (d) {
-              
+
                       var k = JSON.parse(d)
-                      
+
                       console.log("************** Response from Estimote API: ***********************")
                       console.log(JSON.stringify(k))
 
-              
-                  });
-                })
+
+                    });
+                  })
                   req.write(body);
                   req.end();
-              
+
                   req.on('error', function (e) {
                     console.error(e);
                     //reject(e)
                   });
-                
+
 
                 }
-                  
-              })
-              })
-          }
-  
-          }).catch(function (reject){
-  
-        
-          })
 
-          
-        
+              })
+            })
+          }
+
+        }).catch(function (reject) {
+
+
+        })
+
+
+
 
 
 
@@ -423,11 +422,11 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
       })
     })
 
-      res.send({
-        "message": "Devices added"
-      })
+    res.send({
+      "message": "Devices added"
+    })
 
-    
+
   }).catch(function (reject) {
 
     res.status(401).send(reject.error)
@@ -604,8 +603,7 @@ app.post('/user/addtoHome', (req, res) => {
                     "message": "1 record inserted"
                   })
               })
-            }
-            else res.send({
+            } else res.send({
               message: "The user you are trying to add already exists."
             })
           }
@@ -997,8 +995,8 @@ app.post('/api/starttimer', (req, res) => {
 
     var date = new Date()
 
-    var day = ('0'+ date.getDate()).slice(-2)
-    var month = ('0'+ (date.getMonth()+1)).slice(-2)
+    var day = ('0' + date.getDate()).slice(-2)
+    var month = ('0' + (date.getMonth() + 1)).slice(-2)
     var year = date.getFullYear()
 
     var dateString = `${day}/${month}/${year}`
@@ -1132,27 +1130,34 @@ app.post('/api/getUserActivity', (req, res) => {
       const collection = db.collection("timer")
 
       var query = {
-        $and : [
-          {uid: id},
-          {current: false},
-          {Date: date},
-          {HomeID: HomeID}
+        $and: [{
+            uid: id
+          },
+          {
+            current: false
+          },
+          {
+            Date: date
+          },
+          {
+            HomeID: HomeID
+          }
         ]
       }
 
-     collection.find(query).toArray(function(err, result) {
-      if (err) throw err;
-   
-     // if(result.length != 0){
-        var toSend = calculateUserActivity(result).then(function (resolve){
+      collection.find(query).toArray(function (err, result) {
+        if (err) throw err;
+
+        // if(result.length != 0){
+        var toSend = calculateUserActivity(result).then(function (resolve) {
 
           res.send({
             message: resolve
           })
         })
-    });
+      });
 
-    client.close();
+      client.close();
 
     })
 
@@ -1172,12 +1177,12 @@ app.post('/home/getUserLocations', (req, res) => {
 
   var date = new Date()
 
-    var day = ('0'+ date.getDate()).slice(-2)
-    var month = ('0'+ (date.getMonth()+1)).slice(-2)
-    var year = date.getFullYear()
+  var day = ('0' + date.getDate()).slice(-2)
+  var month = ('0' + (date.getMonth() + 1)).slice(-2)
+  var year = date.getFullYear()
 
-    var dateString = `${day}/${month}/${year}`
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var dateString = `${day}/${month}/${year}`
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var con = mysql.createConnection({
       host: "127.0.0.1",
@@ -1185,17 +1190,17 @@ app.post('/home/getUserLocations', (req, res) => {
       password: "",
       database: "uhomesql"
     });
-    
-    con.connect(function(err) {
+
+    con.connect(function (err) {
       if (err) throw err;
-      
+
       var query = `SELECT * FROM home_user WHERE HomeID = ${HomeID}`
 
       con.query(query, async function (err, result, fields) {
         if (err) throw err;
 
-        
-        await Promise.all(result.map(async (elem)=>{
+
+        await Promise.all(result.map(async (elem) => {
 
           var user = await authen.getUser(elem.UserID);
 
@@ -1211,57 +1216,64 @@ app.post('/home/getUserLocations', (req, res) => {
             }
             const db = client.db(dbname)
             const collection = db.collection("timer")
-      
+
             var query = {
-              $and : [
-                {uid: elem.UserID},
-                {current: true},
-                {Date: dateString},
-                {HomeID: HomeID}
+              $and: [{
+                  uid: elem.UserID
+                },
+                {
+                  current: true
+                },
+                {
+                  Date: dateString
+                },
+                {
+                  HomeID: HomeID
+                }
               ]
             }
-      
-           collection.find(query).toArray(function(err, result) {
-            if (err) throw err;
 
-            var time = new Date(result[0].StartTime)
+            collection.find(query).toArray(function (err, result) {
+              if (err) throw err;
 
-            var hours = time.getHours()
-            var mins = time.getMinutes()
-      
-            var obj = {
-              UserID: elem.UserID,
-              RoomName: result[0].Name,
-              UserName: user.displayName,
-              EnterTime: `${hours}:${mins}`
-            }
+              var time = new Date(result[0].StartTime)
 
-            arr.push(obj)
-              
-          });
-      
-          client.close();
+              var hours = time.getHours()
+              var mins = time.getMinutes()
+
+              var obj = {
+                UserID: elem.UserID,
+                RoomName: result[0].Name,
+                UserName: user.displayName,
+                EnterTime: `${hours}:${mins}`
+              }
+
+              arr.push(obj)
+
+            });
+
+            client.close();
           })
 
           res.send({
             message: arr
-          })  
+          })
         }))
-      
-      
-      
+
+
+
       });
     });
-    
 
 
-    
 
-  }).catch(function(reject){
-    
+
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
 
 
@@ -1275,7 +1287,7 @@ app.post('/home/getUserLocations', (req, res) => {
 
 //Add Device to uHome //TODO: implement individual insert to both DBs
 app.post('/admin/addDevice/Hue', (req, res) => {
-  
+
   //var HomeID = req.body.HomeID
   var LightObjs = req.body.message;
 
@@ -1286,9 +1298,9 @@ app.post('/admin/addDevice/Hue', (req, res) => {
     LightObjs.forEach(async light => {
       var HueCred = await getHueCreds(light.HomeID)
 
-    var access = HueCred.tokens.access.value,
-      refresh = HueCred.tokens.refresh.value,
-      username = HueCred.username
+      var access = HueCred.tokens.access.value,
+        refresh = HueCred.tokens.refresh.value,
+        username = HueCred.username
 
       //var arr = [light.Name.toString(), light.RoomID.toString()]
 
@@ -1301,17 +1313,17 @@ app.post('/admin/addDevice/Hue', (req, res) => {
 
       con.connect(function (err) {
         if (err) //res.send({
-        //   "message": error
-        // })
-        console.log(err)
+          //   "message": error
+          // })
+          console.log(err)
 
         var sql = `INSERT INTO device (Name, RoomID, Type) VALUES ("${light.Name}","${light.RoomID}","Hue")`;
 
         con.query(sql, async function (err, result) {
-          if (err)// res.send({
-          //   "message": error
-          // })
-          console.log(err)
+          if (err) // res.send({
+            //   "message": error
+            // })
+            console.log(err)
           else {
             var DeviceID = result.insertId
 
@@ -1342,7 +1354,7 @@ app.post('/admin/addDevice/Hue', (req, res) => {
 
               collection.insertOne(obj, (err, result) => {
                 if (err) //res.send(err)
-                console.log(err)
+                  console.log(err)
                 // else res.send({
                 //   message: result
                 // })
@@ -1390,7 +1402,7 @@ app.post('/checkHueCred', (req, res) => {
         })
       } else {
         res.send({
-          
+
           "hasHueCred": true
         })
       }
@@ -1686,41 +1698,41 @@ app.post('/getAllLights', (req, res) => {
 
     await getHueCreds(HomeID).then(async function (resolve) {
 
-          var access = resolve.tokens.access.value,
-            refresh = resolve.tokens.refresh.value,
-            username = resolve.username,
-            expire = resolve.tokens.refresh.expiresAt
+      var access = resolve.tokens.access.value,
+        refresh = resolve.tokens.refresh.value,
+        username = resolve.username,
+        expire = resolve.tokens.refresh.expiresAt
 
-          var lights = await hue.getAllLights(access, refresh, username);
-          //console.log(resolve)
-          console.log(lights)
+      var lights = await hue.getAllLights(access, refresh, username);
+      //console.log(resolve)
+      console.log(lights)
 
-          var LightArr = []
+      var LightArr = []
 
-          await Promise.all(lights.map(async (light)=>{
+      await Promise.all(lights.map(async (light) => {
 
-            var result = await compareLights(light._id,LightsAtHome)
+        var result = await compareLights(light._id, LightsAtHome)
 
-            if(result == false){
+        if (result == false) {
 
-              var obj = {
-                "LightID": light._id,
-                "Name": light.name,
-                "Select": false
-              }
-  
-              LightArr.push(obj)
-            }
-          
-          }))
-          res.send({
-            "message": LightArr
-          })
-        }).catch(function (reject) {
-          res.send(reject.err)
-        })
-      
-    
+          var obj = {
+            "LightID": light._id,
+            "Name": light.name,
+            "Select": false
+          }
+
+          LightArr.push(obj)
+        }
+
+      }))
+      res.send({
+        "message": LightArr
+      })
+    }).catch(function (reject) {
+      res.send(reject.err)
+    })
+
+
   }).catch(function (reject) {
     res.status(401).send(reject.error)
   });
@@ -2437,78 +2449,77 @@ function compareLights(LightID, LightsAtHome) {
 
     //let flag = false;
 
-    var arr = []   
+    var arr = []
 
-      var loop = async () =>{
-        //return new Promise(async (resolve, reject) => {
-          return await Promise.all(LightsAtHome.map((device)=>{
-            MongoClient.connect(uri, {
-              useNewUrlParser: true,
-              useUnifiedTopology: true
-            }, (err, client) => {
-              if (err) {
-                console.error(err)
-                reject(err)
-              }
-              const db = client.db(dbname)
-              const collection = db.collection("devices")
-        
-              collection.findOne({
-                DeviceID: Number(device.DeviceID)
-              }, (err, result) => {
-                if (err) {
-                  reject(err);
-                  console.log(err)
-                }
-                //console.log("Result = " + JSON.stringify(result));
-                if(result != null)
-                if (result.Info.id == LightID) {
-                  //resolve(true) //Light already exist at home
-                  arr.push("true")
-                  console.log("Found a match: " + result.Info.id + "  =  " + LightID)
-                }
-                 else {
-                  arr.push("false")
-                  console.log("Nope")
-                }
-              })
-              client.close();
-            })
-    
-            if(arr.length == LightsAtHome.length){
-              resolve(arr)
+    var loop = async () => {
+      //return new Promise(async (resolve, reject) => {
+      return await Promise.all(LightsAtHome.map((device) => {
+        MongoClient.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        }, (err, client) => {
+          if (err) {
+            console.error(err)
+            reject(err)
+          }
+          const db = client.db(dbname)
+          const collection = db.collection("devices")
+
+          collection.findOne({
+            DeviceID: Number(device.DeviceID)
+          }, (err, result) => {
+            if (err) {
+              reject(err);
+              console.log(err)
             }
-            
-          }))
-        
+            //console.log("Result = " + JSON.stringify(result));
+            if (result != null)
+              if (result.Info.id == LightID) {
+                //resolve(true) //Light already exist at home
+                arr.push("true")
+                console.log("Found a match: " + result.Info.id + "  =  " + LightID)
+              }
+            else {
+              arr.push("false")
+              console.log("Nope")
+            }
+          })
+          client.close();
+        })
+
+        if (arr.length == LightsAtHome.length) {
+          resolve(arr)
+        }
+
+      }))
+
       //})
-     }
+    }
 
-     
 
-     var check = await loop().then(function (){
-      setTimeout(function(){
+
+    var check = await loop().then(function () {
+      setTimeout(function () {
         //console.log(check.toString())
-      if(arr.includes("true")){
-        console.log("Found it")
-        resolve(true)
-      }
-      else{
-        console.log("Suckaaa")
-        resolve(false)
-      } 
+        if (arr.includes("true")) {
+          console.log("Found it")
+          resolve(true)
+        } else {
+          console.log("Suckaaa")
+          resolve(false)
+        }
 
-      },1000)
+      }, 1000)
     })
-       
-     })
-    
+
+  })
+
 }
 
-function getEstimoteBeaconAttachments(AppID,AppToken){
+function getEstimoteBeaconAttachments(AppID, AppToken) {
   console.log(AppID + " : " + AppToken)
   console.log("Started getting attachments")
-  return new Promise((resolve,reject)=>{
+  return new Promise((resolve, reject) => {
     var options = {
       hostname: 'cloud.estimote.com',
       path: '/v3/attachments',
@@ -2537,8 +2548,8 @@ function getEstimoteBeaconAttachments(AppID,AppToken){
         console.log(JSON.stringify(k.data))
         resolve(k.data)
 
-    });
-  })
+      });
+    })
 
     req.end();
 
@@ -2546,20 +2557,20 @@ function getEstimoteBeaconAttachments(AppID,AppToken){
       console.error(e);
       reject(e)
     });
-  
+
   })
 }
 
-function calculateUserActivity(result){
-  return new Promise((resolve,reject)=>{
+function calculateUserActivity(result) {
+  return new Promise((resolve, reject) => {
 
     var arr = {}
 
-    for(let i = 0; i < result.length; i++){
+    for (let i = 0; i < result.length; i++) {
 
       var stop = (result[i].StopTimer[0])
 
-      if(!(`${result[i].Name}` in arr)){ 
+      if (!(`${result[i].Name}` in arr)) {
 
         var date1 = Number(result[i].StopTimer[0])
         var date2 = Number(result[i].StartTime)
@@ -2567,16 +2578,15 @@ function calculateUserActivity(result){
         console.log(typeof date1)
         console.log(typeof date2)
 
-        console.log("Date 1: " +  date1)
+        console.log("Date 1: " + date1)
         console.log("Date 2: " + date2)
 
         //arr[`${result[i].RoomID}`] = (result[i].StopTimer[0]) - result[i].StartTimer
 
         arr[`${result[i].Name}`] = date1 - date2;
-    
+
         //console.log(arr[`${result[i].RoomID}`])
-      }
-      else{
+      } else {
         let temp = arr[`${result[i].RoomID}`]
 
         let dif = date1 - date2
@@ -2593,7 +2603,7 @@ function calculateUserActivity(result){
     // var arr3 = []
 
     // for(let i = 0; i<arr2.length; i++){
-       
+
     //   if(i%2 == 0){
     //     arr3[i].push(arr2[i])
     //   }
@@ -2602,59 +2612,58 @@ function calculateUserActivity(result){
     //   }
     // }
 
-    setTimeout(resolve(arr2),2000)
-    
+    setTimeout(resolve(arr2), 2000)
+
   })
 }
 
 app.post('/findPhone', (req, res) => {
 
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     uid = resolve.uid
 
-var con = mysql.createConnection({
-  host: "127.0.0.1",
-  user: "root",
-  password: "",
-  database: "uhomesql"
-});
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
 
-con.connect(function(err) {
-  if (err) throw err;
-  //console.log("Connected!");
+    con.connect(function (err) {
+      if (err) throw err;
+      //console.log("Connected!");
 
-  var sql = `SELECT RegisID FROM user_noti WHERE UserID = "${uid}"`
+      var sql = `SELECT RegisID FROM user_noti WHERE UserID = "${uid}"`
 
-  con.query(sql, function (err, result, fields) {
-    if (err) throw err;
-    console.log(result);
+      con.query(sql, function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
 
-    var value = [result[result.length - 1].RegisID]
+        var value = [result[result.length - 1].RegisID]
 
-    console.log("Value : " + JSON.stringify(result[result.length - 1]))
+        console.log("Value : " + JSON.stringify(result[result.length - 1]))
 
-    if(result.length != 0){
-      noti.findPhone(value)
-      res.send({
-        message: "Ringing..."
-      })
-    }
-    else res.send({
-      message: "No Regis Token Found"
-    })
-    
-
-  });
+        if (result.length != 0) {
+          noti.findPhone(value)
+          res.send({
+            message: "Ringing..."
+          })
+        } else res.send({
+          message: "No Regis Token Found"
+        })
 
 
-});
+      });
 
+
+    });
 
 
 
-  }).catch(function(reject){
-    
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
