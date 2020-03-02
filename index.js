@@ -1243,20 +1243,29 @@ app.post('/home/getUserLocations', (req, res) => {
               ]
             }
 
+            console.log("UID: " + elem.UserID)
+            console.log(typeof(elem.UserID))
+            console.log("Date: "+dateString)
+            console.log("HomeID: "+HomeID)
+
             collection.find(query).toArray(function (err, result) {
-              if (err) throw err;
+              if (err) console.log(err);
+
+              console.log("Result from Timer: ")
 
               console.log(result)
 
+              console.log(result.length)
+
               if (result.length != 0) {
-                var time = new Date(result[length-1].StartTime)
+                var time = new Date(result[result.length-1].StartTime)
 
                 var hours = time.getHours()
                 var mins = time.getMinutes()
 
                 var obj = {
                   UserID: elem.UserID,
-                  RoomName: result[length-1].Name,
+                  RoomName: result[result.length-1].Name,
                   UserName: user.displayName,
                   EnterTime: `${hours}:${mins}`
                 }
@@ -1295,7 +1304,7 @@ app.post('/home/getUserLocations', (req, res) => {
       res.send({
         message: arr
       })
-    },1500)
+    },2000)
 
     // res.send({
     //   message: arr
