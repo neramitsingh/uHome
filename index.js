@@ -1260,8 +1260,8 @@ app.post('/home/getUserLocations', (req, res) => {
               if (result.length != 0) {
                 var time = new Date(result[result.length-1].StartTime)
 
-                var hours = time.getHours()
-                var mins = time.getMinutes()
+                var hours = ('0'+ (time.getHours() + 7)).slice(-2)
+                var mins = ('0' + time.getMinutes()).slice(-2)
 
                 var obj = {
                   UserID: elem.UserID,
@@ -2653,7 +2653,7 @@ function calculateUserActivity(result) {
     //   }
     // }
 
-    setTimeout(resolve(arr2), 2000)
+    setTimeout(resolve(arr2), 3000)
 
   })
 }
