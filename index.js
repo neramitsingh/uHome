@@ -408,15 +408,6 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
         })
 
-
-
-
-
-
-
-
-
-
         ///////////////////////////////////////////////////////////////////
 
       })
@@ -432,6 +423,21 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
     res.status(401).send(reject.error)
   });
 })
+
+
+
+// app.post('/room/size', (req, res) => {
+//   var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+
+
+    
+
+//   }).catch(function(reject){
+    
+//     res.status(401).send(reject.error)
+//   });
+//   })
 
 
 
@@ -986,6 +992,7 @@ app.post('/user/getDevices/Estimote/Beacon/Show', (req, res) => {
 
 app.post('/api/starttimer', (req, res) => {
 
+  var HomeID = req.body.HomeID
   var RoomID = req.body.RoomID
   var Name = req.body.Name
   var Type = req.body.Type
@@ -1005,6 +1012,7 @@ app.post('/api/starttimer', (req, res) => {
     const timer = {
       uid: resolve.uid,
       RoomID: RoomID,
+      HomeID: HomeID,
       Name: Name,
       Type: Type,
       StartTime: Date.now(),
