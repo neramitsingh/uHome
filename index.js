@@ -2628,7 +2628,7 @@ function calculateUserActivity(result) {
 
         //console.log(arr[`${result[i].RoomID}`])
       } else {
-        let temp = arr[`${result[i].RoomID}`]
+        let temp = arr[`${result[i].Name}`]
 
         let dif = date1 - date2
         console.log(dif)
