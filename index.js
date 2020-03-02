@@ -431,10 +431,10 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
 
 
-    
+
 
 //   }).catch(function(reject){
-    
+
 //     res.status(401).send(reject.error)
 //   });
 //   })
@@ -1207,6 +1207,8 @@ app.post('/home/getUserLocations', (req, res) => {
       con.query(query, async function (err, result, fields) {
         if (err) throw err;
 
+        console.log(result)
+
 
         await Promise.all(result.map(async (elem) => {
 
@@ -1218,9 +1220,9 @@ app.post('/home/getUserLocations', (req, res) => {
           }, (err, client) => {
             if (err) {
               console.error(err)
-              res.send({
-                error: err
-              })
+              // res.send({
+              //   error: err
+              // })
             }
             const db = client.db(dbname)
             const collection = db.collection("timer")
@@ -1244,38 +1246,60 @@ app.post('/home/getUserLocations', (req, res) => {
             collection.find(query).toArray(function (err, result) {
               if (err) throw err;
 
-              var time = new Date(result[0].StartTime)
+              console.log(result)
 
-              var hours = time.getHours()
-              var mins = time.getMinutes()
+              if (result.length != 0) {
+                var time = new Date(result[length-1].StartTime)
 
-              var obj = {
-                UserID: elem.UserID,
-                RoomName: result[0].Name,
-                UserName: user.displayName,
-                EnterTime: `${hours}:${mins}`
+                var hours = time.getHours()
+                var mins = time.getMinutes()
+
+                var obj = {
+                  UserID: elem.UserID,
+                  RoomName: result[length-1].Name,
+                  UserName: user.displayName,
+                  EnterTime: `${hours}:${mins}`
+                }
+
+                arr.push(obj)
               }
+              else{
+                console.log("Nothing found")
+                var obj = {
+                  UserID: elem.UserID,
+                  RoomName: "Unknown",
+                  UserName: user.displayName,
+                  EnterTime: "Unknown"
+                }
 
-              arr.push(obj)
+                arr.push(obj)
+
+                
+              }
 
             });
 
             client.close();
           })
 
-          res.send({
-            message: arr
-          })
         }))
-
-
 
       });
     });
 
+    // console.log("Array: ***")
 
+    // console.log(arr)
 
+    setTimeout(()=>{
+      res.send({
+        message: arr
+      })
+    },1500)
 
+    // res.send({
+    //   message: arr
+    // })
 
   }).catch(function (reject) {
 
