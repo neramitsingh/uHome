@@ -2931,124 +2931,110 @@ app.post('/routine/add', (req, res) => {
 
 
 
-//////// Check every minute to get routine ///////
-setInterval(()=>{
-  var time = new Date()
+// //////// Check every minute to get routine ///////
+// setInterval(()=>{
+//   var time = new Date()
 
-  var hours = ('0'+ (time.getHours())).slice(-2)
-  var mins = ('0' + time.getMinutes()).slice(-2)
+//   var hours = ('0'+ (time.getHours())).slice(-2)
+//   var mins = ('0' + time.getMinutes()).slice(-2)
 
-  console.log("Time: "+ hours + ":" + mins)
+//   console.log("Time: "+ hours + ":" + mins)
 
-  if(hours == "00" && mins == "00")
-  {
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        return
-      }
+//   if(hours == "00" && mins == "00")
+//   {
+//     MongoClient.connect(uri, {
+//       useNewUrlParser: true,
+//       useUnifiedTopology: true
+//     }, (err, client) => {
+//       if (err) {
+//         console.error(err)
+//         return
+//       }
   
-      const db = client.db(dbname)
-      const collection = db.collection("sun")
+//       const db = client.db(dbname)
+//       const collection = db.collection("sun")
       
-      //res.send(req.params.id)
-      collection.find({}).toArray(async (err, items) => {
-        if (err) console.log(err)
+//       //res.send(req.params.id)
+//       collection.find({}).toArray(async (err, items) => {
+//         if (err) console.log(err)
   
-        console.log("Query result")
-        console.log(items)
+//         console.log("Query result")
+//         console.log(items)
   
-        await Promise.all(items.map(async (elem) => {
+//         await Promise.all(items.map(async (elem) => {
   
-          if(elem.Sunrise == true)
-          {
-            // var sunCall = await sun.getSun(elem.Lat, elem.Long)
+//           if(elem.Sunrise == true)
+//           {
 
-            // var value = sunCall.sunrise
-
-            // var timeArray = await sun.getTime(value).then(async (resolve)=>{
-            //   await insertRoutine(elem.DeviceID, elem.HomeID, resolve[0], resolve[1], elem.Action)
-            // })
-
-            addSuntoRoutine("sunrise", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
+//             addSuntoRoutine("sunrise", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
             
-          }
-          else if(elem.Sunset == true)
-          {
-            // var sunCall = await sun.getSun()
+//           }
+//           else if(elem.Sunset == true)
+//           {
 
-            // var value = sunCall.sunset
-
-            // var timeArray = await sun.getTime(value).then(async (resolve)=>{
-            //   await insertRoutine(elem.DeviceID, elem.HomeID, resolve[0], resolve[1], elem.Action)
-            // })
-
-            addSuntoRoutine("sunset", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
+//             addSuntoRoutine("sunset", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
             
-          }
+//           }
   
-        }))
+//         }))
   
         
-      })
-      client.close();
-    })
-  }
+//       })
+//       client.close();
+//     })
+//   }
 
 
 
-  ////////////////////////////////////////////////////////////////
+//   ////////////////////////////////////////////////////////////////
 
 
-  MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }, (err, client) => {
-    if (err) {
-      console.error(err)
-      return
-    }
+//   MongoClient.connect(uri, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true
+//   }, (err, client) => {
+//     if (err) {
+//       console.error(err)
+//       return
+//     }
 
-    var query = {
-      $and: [{
-          Hours: hours
-        },
-        {
-          Minutes: mins
-        }
-      ]
-    }
+//     var query = {
+//       $and: [{
+//           Hours: hours
+//         },
+//         {
+//           Minutes: mins
+//         }
+//       ]
+//     }
 
-    const db = client.db(dbname)
-    const collection = db.collection("routine")
+//     const db = client.db(dbname)
+//     const collection = db.collection("routine")
     
-    //res.send(req.params.id)
-    collection.find(query).toArray(async (err, items) => {
-      if (err) console.log(err)
+//     //res.send(req.params.id)
+//     collection.find(query).toArray(async (err, items) => {
+//       if (err) console.log(err)
 
-      console.log("Query result")
-      console.log(items)
+//       console.log("Query result")
+//       console.log(items)
 
-      await Promise.all(items.map(async (elem) => {
+//       await Promise.all(items.map(async (elem) => {
 
-        if(elem.Action == "On")
-        {
-          routine.setLightAPI(elem.DeviceID,elem.HomeID)
-        }
-        else if(elem.Action == "Off")
-        {
-          routine.LightOffAPI(elem.DeviceID,elem.HomeID)
-        }
+//         if(elem.Action == "On")
+//         {
+//           routine.setLightAPI(elem.DeviceID,elem.HomeID)
+//         }
+//         else if(elem.Action == "Off")
+//         {
+//           routine.LightOffAPI(elem.DeviceID,elem.HomeID)
+//         }
 
-      }))
+//       }))
  
-    })
-    client.close();
-  })
-},60000)
+//     })
+//     client.close();
+//   })
+// },60000)
 
 async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long){
 
