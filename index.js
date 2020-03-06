@@ -2932,6 +2932,14 @@ app.post('/routine/add', (req, res) => {
 
 
 //////// Check every minute to get routine ///////
+MongoClient.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}, async (err, client) => {
+  if (err) {
+    console.error(err)
+    return
+  }
 setInterval(()=>{
   var time = new Date()
 
@@ -2989,14 +2997,7 @@ setInterval(()=>{
   ////////////////////////////////////////////////////////////////
 
 
-  MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }, (err, client) => {
-    if (err) {
-      console.error(err)
-      return
-    }
+  
 
     var query = {
       $and: [{
@@ -3032,9 +3033,11 @@ setInterval(()=>{
       }))
  
     })
-    client.close();
-  })
+    
+  
 },60000)
+
+})
 
 async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long){
 
