@@ -299,7 +299,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
                     "data": {
                       "payload": {
-                        "HomeID": result[0].HomeID,
+                        "HomeID": result[0].HomeID.toString(),
                         "RoomID": est.RoomID.toString(),
                         "Name": result[0].Name,
                         "Type": result[0].Type
@@ -377,7 +377,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
                     "data": {
                       "payload": {
-                        "HomeID": result[0].HomeID,
+                        "HomeID": result[0].HomeID.toString(),
                         "RoomID": est.RoomID.toString(),
                         "Name": result[0].Name,
                         "Type": result[0].Type
