@@ -101,7 +101,9 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
         process.stdout.write(d);
 
-        var k = d
+        setTimeout(()=>{
+
+          var k = JSON.parse(d)
         
 
         await Promise.all(k.data.map(async (elem) => {
@@ -126,6 +128,9 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
 
     });
+  },1000)
+
+        
 
     req.end();
 
