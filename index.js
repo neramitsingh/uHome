@@ -2920,6 +2920,109 @@ app.post('/routine/add', (req, res) => {
 })
 
 
+
+app.post('/routine/get', (req, res) => {
+
+  var HomeID  = req.body.HomeID
+  
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("routine")
+
+      var query = {
+       HomeID: HomeID
+      }
+
+      collection.find(query).toArray(function (err, result) {
+        if (err) throw err;
+
+        res.send({
+          message: result
+        })
+      });
+
+      client.close();
+
+    })
+    
+
+    
+  
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+
+})
+
+
+
+app.post('/routine/delete', (req, res) => {
+
+  // var HomeID  = req.body.HomeID
+  var objectid = req.body._id
+  
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("routine")
+
+      var query = {
+        _id: ObjectId(objectid)
+      }
+
+      collection.deleteOne(query, (err, result) => {
+        if (err) reject(err)
+        
+        console.log("Deleted Routine")
+
+        res.send({
+          message: "Deleted Routine"
+        })
+
+      })
+
+      client.close();
+
+    })
+
+    
+
+    
+  
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+
+})
+
+
+
+
+
+
 app.post('/delete/home', (req, res) => {
 
   var HomeID = req.body.HomeID
@@ -2954,41 +3057,6 @@ app.post('/delete/home', (req, res) => {
     res.status(401).send(reject.error)
   });
   })
-
-  app.post('/delete/room', (req, res) => {
-
-    var RoomID = req.body.RoomID
-  
-    var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
-  
-      var con = mysql.createConnection({
-        host: "127.0.0.1",
-        user: "root",
-        password: "",
-        database: "uhomesql"
-      });
-      
-      con.connect(function(err) {
-        if (err) throw err;
-        console.log("Connected!");
-        var sql = `DELETE FROM room WHERE RoomID = '${RoomID}';`
-  
-        con.query(sql, function (err, result) {
-          if (err) res.send({
-            message: err
-          })
-          res.send({
-            message: "Deleted"
-          })
-        });
-  
-      });
-  
-    }).catch(function(reject){
-      
-      res.status(401).send(reject.error)
-    });
-    })
 
     app.post('/delete/room', (req, res) => {
 
@@ -3027,7 +3095,7 @@ app.post('/delete/home', (req, res) => {
 
       app.post('/delete/device', (req, res) => {
 
-        var RoomID = req.body.RoomID
+        var DeviceID = req.body.DeviceID
       
         var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
       
@@ -3061,29 +3129,62 @@ app.post('/delete/home', (req, res) => {
         })
 
 
+        app.post('/delete/userfromhome', (req, res) => {
 
+          var UserID = req.body.UserID
+        
+          var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+        
+            var con = mysql.createConnection({
+              host: "127.0.0.1",
+              user: "root",
+              password: "",
+              database: "uhomesql"
+            });
+            
+            con.connect(function(err) {
+              if (err) throw err;
+              console.log("Connected!");
+              var sql = `DELETE FROM home_user WHERE UserID = '${UserID}';`
+        
+              con.query(sql, function (err, result) {
+                if (err) res.send({
+                  message: err
+                })
+                res.send({
+                  message: "Deleted"
+                })
+              });
+        
+            });
+        
+          }).catch(function(reject){
+            
+            res.status(401).send(reject.error)
+          });
+          })
 
+          app.post('/getAllLightsRoutine', (req, res) => {
 
+            var HomeID = req.body.HomeID
+          
+            var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+              getLightsAtHome(HomeID).then((resolve)=>{
+                res.send({
+                  message: resolve
+                })
+              }).catch((reject)=>{
+                res.send({
+                  message: reject
+                })
+              })
+          
+            }).catch(function(reject){
+              
+              res.status(401).send(reject.error)
+            });
+            })
 
 
 
@@ -3193,7 +3294,7 @@ setInterval(()=>{
 
   console.log("Time: "+ hours + ":" + mins)
 
-  if(hours == "14" && mins == "53")
+  if(hours == "00" && mins == "00")
   {
 
     deleteSunfromRoutine()
