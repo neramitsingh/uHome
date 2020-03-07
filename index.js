@@ -99,7 +99,10 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
       resp.on('data', async function (d) {
 
+        process.stdout.write(d);
+
         var k = JSON.parse(d)
+        
 
         await Promise.all(k.data.map(async (elem) => {
 
@@ -123,6 +126,7 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
 
     });
+
     req.end();
 
     req.on('error', function (e) {
