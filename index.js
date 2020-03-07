@@ -1,6 +1,9 @@
 const express = require('express')
+
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
+const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
+const ObjectId = require('mongodb').ObjectID;
 
 
 const hue = require('./hue')
@@ -8,14 +11,15 @@ const noti = require('./notification')
 const estimote = require('./estimote')
 const routine = require('./routine')
 const sun = require('./sun')
+const authen = require('./authen')
+
 
 const https = require('https');
 const mysql = require('mysql');
-const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
-const ObjectId = require('mongodb').ObjectID;
+
 const app = express();
 const cors = require('cors')
-const authen = require('./authen')
+
 
 
 var randomstring = require("randomstring");
@@ -1675,6 +1679,8 @@ app.post('/switchLight', (req, res) => {
 
 })
 
+
+
 app.post('/setLight', (req, res) => {
 
   // console.log("Body: ")
@@ -1737,6 +1743,70 @@ app.post('/setLight', (req, res) => {
   });
 
 })
+
+app.post('/loopLight', (req, res) => {
+
+  // console.log("Body: ")
+  // console.log(req.body)
+  var DeviceID = req.body.DeviceID
+  var HomeID = req.body.HomeID
+
+  var Hex = req.body.Hex
+
+  var Hexval = "#" + Hex.substring(3, 9)
+  var brightHex = Hex.substring(1, 3)
+
+  var brightness = parseInt(brightHex, 16);
+
+  console.log(brightness)
+
+  if (brightness == 0) brightness = 1
+  if (brightness == 255) brightness = 254
+
+  //console.log("New Hex: "+Hexval)
+
+  const hexToRgb = hex =>
+    hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => '#' + r + r + g + g + b + b)
+    .substring(1).match(/.{2}/g)
+    .map(x => parseInt(x, 16))
+
+  var RGB = hexToRgb(Hexval);
+
+
+  console.log("DeviceID = " + DeviceID)
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+    var uid = resolve.uid
+
+    var Light = await getLightfromDB(DeviceID)
+
+    var LightID = Light.Info.id
+
+    console.log(LightID);
+
+
+    var HueCred = getHueCreds(HomeID).then(async function (resolve) {
+
+      var access = resolve.tokens.access.value,
+        refresh = resolve.tokens.refresh.value,
+        username = resolve.username,
+        expire = resolve.tokens.refresh.expiresAt
+      var state = hue.LightLoop(access, refresh, username, LightID, RGB, brightness);
+      //console.log(resolve)
+      console.log(state)
+      res.send({
+        "message": "Light set"
+      })
+    }).catch(function (reject) {
+      res.send(reject.err)
+    })
+
+
+  }).catch(function (reject) {
+    res.status(401).send(reject.error)
+  });
+
+})
+
 
 app.post('/LightOff', (req, res) => {
 
@@ -2199,9 +2269,7 @@ app.post('/api/device/delete', (req, res) => {
 
 
 
-app.listen(3000, () => {
-  console.log('Listening on port 3000!')
-});
+
 
 module.exports.updateHueToken = function (data, UID) {
 
@@ -2801,7 +2869,7 @@ app.post('/routine/add', (req, res) => {
 
     if(Sunrise == true){
 
-      addSuntoRoutine("sunrise", DeviceID, HomeID, Action, Lat, Long)
+      addSuntoRoutine("sunrise", DeviceID, HomeID, Action, Lat, Long, true)
 
       await insertSun(DeviceID, HomeID, true, false, Action, Lat, Long).then(
     
@@ -2818,7 +2886,7 @@ app.post('/routine/add', (req, res) => {
     }
     else if(Sunset == true){
 
-      addSuntoRoutine("sunset", DeviceID, HomeID, Action, Lat, Long)
+      addSuntoRoutine("sunset", DeviceID, HomeID, Action, Lat, Long, true)
 
       await insertSun(DeviceID, HomeID, false, true, Action, Lat, Long).then(
 
@@ -2833,7 +2901,7 @@ app.post('/routine/add', (req, res) => {
     }
 
     else{
-      await insertRoutine(DeviceID, HomeID, Hours, Minutes, Action).then(
+      await insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, false).then(
     
         res.send({
           message: "Routine added"
@@ -2851,8 +2919,180 @@ app.post('/routine/add', (req, res) => {
 
 })
 
+
+app.post('/delete/home', (req, res) => {
+
+  var HomeID = req.body.HomeID
+
+  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+    
+    con.connect(function(err) {
+      if (err) throw err;
+      console.log("Connected!");
+      var sql = `DELETE FROM Home WHERE HomeID = '${HomeID}';`
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          message: err
+        })
+        res.send({
+          message: "Deleted"
+        })
+      });
+
+    });
+
+  }).catch(function(reject){
+    
+    res.status(401).send(reject.error)
+  });
+  })
+
+  app.post('/delete/room', (req, res) => {
+
+    var RoomID = req.body.RoomID
   
-  function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action)
+    var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  
+      var con = mysql.createConnection({
+        host: "127.0.0.1",
+        user: "root",
+        password: "",
+        database: "uhomesql"
+      });
+      
+      con.connect(function(err) {
+        if (err) throw err;
+        console.log("Connected!");
+        var sql = `DELETE FROM room WHERE RoomID = '${RoomID}';`
+  
+        con.query(sql, function (err, result) {
+          if (err) res.send({
+            message: err
+          })
+          res.send({
+            message: "Deleted"
+          })
+        });
+  
+      });
+  
+    }).catch(function(reject){
+      
+      res.status(401).send(reject.error)
+    });
+    })
+
+    app.post('/delete/room', (req, res) => {
+
+      var RoomID = req.body.RoomID
+    
+      var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+    
+        var con = mysql.createConnection({
+          host: "127.0.0.1",
+          user: "root",
+          password: "",
+          database: "uhomesql"
+        });
+        
+        con.connect(function(err) {
+          if (err) throw err;
+          console.log("Connected!");
+          var sql = `DELETE FROM room WHERE RoomID = '${RoomID}';`
+    
+          con.query(sql, function (err, result) {
+            if (err) res.send({
+              message: err
+            })
+            res.send({
+              message: "Deleted"
+            })
+          });
+    
+        });
+    
+      }).catch(function(reject){
+        
+        res.status(401).send(reject.error)
+      });
+      })
+
+      app.post('/delete/device', (req, res) => {
+
+        var RoomID = req.body.RoomID
+      
+        var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+      
+          var con = mysql.createConnection({
+            host: "127.0.0.1",
+            user: "root",
+            password: "",
+            database: "uhomesql"
+          });
+          
+          con.connect(function(err) {
+            if (err) throw err;
+            console.log("Connected!");
+            var sql = `DELETE FROM device WHERE DeviceID = '${DeviceID}';`
+      
+            con.query(sql, function (err, result) {
+              if (err) res.send({
+                message: err
+              })
+              res.send({
+                message: "Deleted"
+              })
+            });
+      
+          });
+      
+        }).catch(function(reject){
+          
+          res.status(401).send(reject.error)
+        });
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, Sun)
   {
 
     return new Promise((resolve,reject)=>{
@@ -2862,7 +3102,8 @@ app.post('/routine/add', (req, res) => {
         HomeID: HomeID,
         Hours: Hours,
         Minutes: Minutes,
-        Action: Action
+        Action: Action,
+        Sun: Sun
       }
   
       MongoClient.connect(uri, {
@@ -2930,6 +3171,10 @@ app.post('/routine/add', (req, res) => {
 
 
 
+  app.listen(3000, () => {
+    console.log('Listening on port 3000!')
+  });
+
 
 //////// Check every minute to get routine ///////
 MongoClient.connect(uri, {
@@ -2948,8 +3193,11 @@ setInterval(()=>{
 
   console.log("Time: "+ hours + ":" + mins)
 
-  if(hours == "00" && mins == "00")
+  if(hours == "14" && mins == "53")
   {
+
+    deleteSunfromRoutine()
+
     MongoClient.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -3048,7 +3296,48 @@ async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long){
             else if(ss == "sunset") value = sunCall.sunset
 
             var timeArray = await sun.getTime(value).then(async (resolve)=>{
-              await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action)
+              await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true)
             })
 
 }
+
+function deleteSunfromRoutine()
+{
+
+  return new Promise((resolve,reject)=>{
+
+    var query = {
+      Sun: true
+    }
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("routine")
+
+      collection.deleteMany(query, (err, result) => {
+        if (err) reject(err)
+        console.log("Deleted all sun routine")
+        resolve(result)
+        //else console.log(result)
+      })
+      client.close();
+    })
+
+  })
+}
+
+
+
+
+
+
+
+
+
