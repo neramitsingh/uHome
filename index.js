@@ -101,7 +101,7 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
         process.stdout.write(d);
 
-        setTimeout(()=>{
+        setTimeout(async ()=>{
 
           var k = JSON.parse(d)
         
