@@ -30,7 +30,7 @@ module.exports.postSettings = function (AppID, AppToken, identifier, power) {
         var options = {
             hostname: 'cloud.estimote.com',
             path: `/v3/devices/${identifier}`,
-            method: 'PATCH',
+            method: 'POST',
             //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
             auth: `${AppID}:${AppToken}`,
             headers: {
