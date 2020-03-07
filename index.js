@@ -2994,7 +2994,7 @@ app.post('/routine/delete', (req, res) => {
 
       collection.deleteOne(query, (err, result) => {
         if (err) reject(err)
-        
+
         console.log("Deleted Routine")
 
         res.send({
@@ -3039,7 +3039,7 @@ app.post('/delete/home', (req, res) => {
     con.connect(function(err) {
       if (err) throw err;
       console.log("Connected!");
-      var sql = `DELETE FROM Home WHERE HomeID = '${HomeID}';`
+      var sql = `DELETE FROM home WHERE HomeID = '${HomeID}';`
 
       con.query(sql, function (err, result) {
         if (err) res.send({
