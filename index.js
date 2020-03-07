@@ -128,7 +128,7 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
 
     });
-  },3500)
+  },5000)
 
         
 
