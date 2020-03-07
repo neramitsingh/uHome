@@ -127,6 +127,9 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
     req.on('error', function (e) {
       console.error(e);
+      res.send(({
+        message: e
+      }))
     });
 
 
