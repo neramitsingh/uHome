@@ -94,14 +94,14 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
     };
 
     var req = https.request(options, function (resp) {
-      console.log("statusCode: ", res.statusCode);
-      console.log("headers: ", res.headers);
+      console.log("statusCode: ", resp.statusCode);
+      console.log("headers: ", resp.headers);
 
       resp.on('data', async function (d) {
 
         process.stdout.write(d);
 
-        var k = JSON.parse(d)
+        var k = d
         
 
         await Promise.all(k.data.map(async (elem) => {
@@ -131,9 +131,9 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
     req.on('error', function (e) {
       console.error(e);
-      res.send(({
+      res.send({
         message: e
-      }))
+      })
     });
 
 
