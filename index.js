@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "10")
+  if(hours == "18" && mins == "22")
   {
 
     smartLearning()
@@ -3506,7 +3506,7 @@ function smartLearning(){
 });
     
     con.connect(async function(err) {
-      if (err) throw err;
+      if (err) console.log(err)
       con.query("SELECT * FROM home",async function (err, result, fields) {
         if (err) throw err;
         console.log(result);
@@ -3526,7 +3526,9 @@ function smartLearning(){
           }
       
           collection2.find(query2).toArray(async function (err, result2) {
-            if (err) throw err;
+            if (err) console.log(err)
+
+            console.log(result2)
       
             await Promise.all(result2.map(async (elem2) => {
 
