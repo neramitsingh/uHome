@@ -1329,10 +1329,6 @@ app.post('/home/getUserLocations', (req, res) => {
 
 
 
-
-
-
-
 //Below this line needs revision
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1469,12 +1465,6 @@ app.post('/checkHueCred', (req, res) => {
 })
 
 
-
-
-
-
-
-
 app.post('/api/addHueUser', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
     //console.log(resolve)
@@ -1493,54 +1483,6 @@ app.post('/api/addHueUser', (req, res) => {
   });
 })
 
-// app.get('/convert', (req, res) => {
-//   function httpGet2() {
-//     const data = JSON.stringify({
-//       "idToken": "1111",
-//       "LightId": "4"
-//     })
-//     //console.log("Light API started" + data + " Type: " + typeof(data))
-//     return new Promise(((resolve, reject) => {
-//       var options = {
-//         host: 'localhost',
-//         port: 3000,
-//         path: '/switchLight',
-//         method: 'POST',
-//         json: {
-//           "idToken": "1111",
-//           "LightId": "4"
-//         },
-//         headers: {
-//           'Content-Type': 'application/json'
-//         }
-
-//       };
-
-//       var req = http.request(options, (res) => {
-//         console.log('statusCode:', res.statusCode);
-//         console.log('headers:', res.headers);
-
-//         res.on('data', (d) => {
-//           process.stdout.write(d);
-//         });
-//       });
-
-//       req.on('error', (e) => {
-//         console.error(e);
-//       });
-
-//       req.write(data);
-//       req.end();
-
-//     }));
-//   }
-//   async function run() {
-//     var response = httpGet2();
-//     console.log("################################# Response ##########################")
-//     console.log(response)
-//   }
-//   run();
-// })
 
 
 app.post('/api/addHueUser/callback', (req, res) => {
@@ -2781,18 +2723,6 @@ function calculateUserActivity(result) {
 
     var arr2 = Object.entries(arr)
 
-    // var arr3 = []
-
-    // for(let i = 0; i<arr2.length; i++){
-
-    //   if(i%2 == 0){
-    //     arr3[i].push(arr2[i])
-    //   }
-    //   else{
-    //     arr3[i-1].push(arr2[i][1])
-    //   }
-    // }
-
     setTimeout(resolve(arr2), 3000)
 
   })
@@ -2849,6 +2779,9 @@ app.post('/findPhone', (req, res) => {
     res.status(401).send(reject.error)
   });
 })
+
+
+
 
 app.post('/routine/add', (req, res) => {
 
@@ -3437,6 +3370,13 @@ setInterval(()=>{
     })
   }
 
+  if(hours == "01" && mins == "00")
+  {
+
+    smartLearning()
+
+  }
+
 
 
   ////////////////////////////////////////////////////////////////
@@ -3539,6 +3479,112 @@ function deleteSunfromRoutine()
 }
 
 
+function smartLearning(){
+
+  var date = getDateString()
+
+  MongoClient.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }, (err, client) => {
+    if (err) {
+      console.error(err)
+      res.send({
+        error: err
+      })
+    }
+    const db = client.db(dbname)
+    const collection = db.collection("timer")
+    const collection2 = db.collection("setting")
+
+
+    var con = mysql.createConnection({
+      host: "localhost",
+      user: "yourusername",
+      password: "yourpassword",
+      database: "mydb"
+    });
+    
+    con.connect(function(err) {
+      if (err) throw err;
+      con.query("SELECT * FROM home", function (err, result, fields) {
+        if (err) throw err;
+        console.log(result);
+
+        await Promise.all(result.map(async (elem) => {
+
+          var query2 = {
+            $and: [
+              {
+                HomeID: elem.HomeID
+              },
+              {
+                Learn: true
+              }
+            ]
+            
+          }
+      
+          collection2.find(query2).toArray(function (err, result2) {
+            if (err) throw err;
+      
+            await Promise.all(result2.map(async (elem2) => {
+
+              var query = {
+                $and: [{
+                    uid: elem2.UserID
+                  },
+                  {
+                    current: false
+                  },
+                  {
+                    Date: date
+                  },
+                  {
+                    HomeID: elem2.HomeID
+                  }
+                ]
+              }
+        
+              collection.find(query).toArray(function (err, result3) {
+                if (err) throw err;
+        
+                // if(result.length != 0){
+                var totalTime = calculateUserActivity(result3).then(function (resolve) {
+        
+                console.log(resolve)
+                })
+              });
+
+            }))
+
+            
+          });
+
+
+        }))
+
+      });
+    });
+  });
+
+    
+}
+
+
+
+
+function getDateString(){
+  var date = new Date()
+
+  var day = ('0' + date.getDate()).slice(-2)
+  var month = ('0' + (date.getMonth() + 1)).slice(-2)
+  var year = date.getFullYear()
+
+  var dateString = `${day}/${month}/${year}`
+
+  return dateString
+}
 
 
 
