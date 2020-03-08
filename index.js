@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "27")
+  if(hours == "18" && mins == "32")
   {
 
     smartLearning()
@@ -3545,6 +3545,9 @@ function smartLearning(){
                   },
                   {
                     HomeID: elem2.HomeID
+                  },
+                  {
+                    Type: "Bathroom"
                   }
                 ]
               }
