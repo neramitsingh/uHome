@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "02")
+  if(hours == "18" && mins == "05")
   {
 
     smartLearning()
@@ -3499,11 +3499,11 @@ function smartLearning(){
 
 
     var con = mysql.createConnection({
-      host: "localhost",
-      user: "yourusername",
-      password: "yourpassword",
-      database: "mydb"
-    });
+    host: "127.0.0.1",
+    user: "root",
+    password: "",
+    database: "uhomesql"
+});
     
     con.connect(async function(err) {
       if (err) throw err;
