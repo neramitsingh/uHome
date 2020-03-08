@@ -16,6 +16,7 @@ const authen = require('./authen')
 
 const https = require('https');
 const mysql = require('mysql');
+const request = require('request');
 
 const app = express();
 const cors = require('cors')
@@ -81,11 +82,13 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
     var data = []
 
     var options = {
-      hostname: 'cloud.estimote.com',
-      path: '/v3/devices',
+      uri: 'https://cloud.estimote.com/v3/devices',
       method: 'GET',
       //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
-      auth: `${AppID}:${AppToken}`,
+      auth: {
+          username: AppID,
+          password: AppToken
+      },
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
@@ -93,21 +96,16 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
       }
     };
 
-    var req = https.request(options, function (resp) {
-      console.log("statusCode: ", resp.statusCode);
-      console.log("headers: ", resp.headers);
+    request(options, async (err, resp, body) => {
+        if (err) {
+            res.send({
+              message: error
+            })
+            return console.log(err);
+        }
+        console.log(JSON.parse(body));
 
-      resp.on('data', async function (d) {
-
-        process.stdout.write(d);
-
-        //console.log(JSON.stringify(d))
-
-
-
-        var k = JSON.parse(d)
-        
-      
+        var k = JSON.parse(body)
 
         await Promise.all(k.data.map(async (elem) => {
 
@@ -127,20 +125,7 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
           message: data
         })
 
-      });
-});
-
-        
-
-    req.end();
-
-    req.on('error', function (e) {
-      console.error(e);
-      res.send({
-        message: e
-      })
     });
-
 
   }).catch(function (reject) {
 
