@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "05")
+  if(hours == "18" && mins == "10")
   {
 
     smartLearning()
@@ -3549,7 +3549,7 @@ function smartLearning(){
               collection.find(query).toArray(async function (err, result3) {
                 if (err) throw err;
         
-                // if(result.length != 0){
+                console.log(result3)
                 var totalTime = await calculateUserActivity(result3).then(function (resolve) {
         
                 console.log(resolve)
