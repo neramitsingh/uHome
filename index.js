@@ -2866,7 +2866,7 @@ app.post('/routine/add', (req, res) => {
 
     if(Sunrise == true){
 
-      addSuntoRoutine("sunrise", DeviceID, HomeID, Action, Lat, Long, true)
+      addSuntoRoutine("sunrise", DeviceID, HomeID, Action, Lat, Long, true, "sunrise")
 
       await insertSun(DeviceID, HomeID, true, false, Action, Lat, Long).then(
     
@@ -2883,7 +2883,7 @@ app.post('/routine/add', (req, res) => {
     }
     else if(Sunset == true){
 
-      addSuntoRoutine("sunset", DeviceID, HomeID, Action, Lat, Long, true)
+      addSuntoRoutine("sunset", DeviceID, HomeID, Action, Lat, Long, true, "sunset")
 
       await insertSun(DeviceID, HomeID, false, true, Action, Lat, Long).then(
 
@@ -3263,19 +3263,45 @@ app.post('/delete/home', (req, res) => {
 
 
   
-  function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, Sun)
+  function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, Sun, SunType)
   {
 
     return new Promise((resolve,reject)=>{
 
-      var obj = {
-        DeviceID: DeviceID,
-        HomeID: HomeID,
-        Hours: Hours,
-        Minutes: Minutes,
-        Action: Action,
-        Sun: Sun
+      if(SunType == "sunrise"){
+        var obj = {
+          DeviceID: DeviceID,
+          HomeID: HomeID,
+          Hours: Hours,
+          Minutes: Minutes,
+          Action: Action,
+          Sun: Sun,
+          Sunrise: true
+        }
       }
+      else if(SunType == "sunset"){
+        var obj = {
+          DeviceID: DeviceID,
+          HomeID: HomeID,
+          Hours: Hours,
+          Minutes: Minutes,
+          Action: Action,
+          Sun: Sun,
+          Sunset: true
+        }
+      }
+      else{
+        var obj = {
+          DeviceID: DeviceID,
+          HomeID: HomeID,
+          Hours: Hours,
+          Minutes: Minutes,
+          Action: Action,
+          Sun: Sun
+        }
+      }
+
+      
   
       MongoClient.connect(uri, {
         useNewUrlParser: true,
@@ -3463,12 +3489,20 @@ async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long){
             var sunCall = await sun.getSun(Lat, Long)
             var value
 
-            if(ss == "sunrise") value = sunCall.sunrise
-            else if(ss == "sunset") value = sunCall.sunset
+            if(ss == "sunrise"){
+              value = sunCall.sunrise
+              var timeArray = await sun.getTime(value).then(async (resolve)=>{
+                await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
+              })
+            } 
+            else if(ss == "sunset"){
+              value = sunCall.sunset
+              var timeArray = await sun.getTime(value).then(async (resolve)=>{
+                await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
+              })
+            } 
 
-            var timeArray = await sun.getTime(value).then(async (resolve)=>{
-              await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true)
-            })
+            
 
 }
 
