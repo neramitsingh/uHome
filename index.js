@@ -2976,9 +2976,13 @@ app.post('/routine/get', (req, res) => {
     
           }))
 
-          res.send({
-            message: arr
-          })
+          setTimeout(()=>{
+            res.send({
+              message: arr
+            })
+          },2000)
+
+          
 
         });
 
