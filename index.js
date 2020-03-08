@@ -101,10 +101,13 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
 
         process.stdout.write(d);
 
-        setTimeout(async ()=>{
+        //console.log(JSON.stringify(d))
 
-          var k = JSON.parse(d)
+
+
+        var k = JSON.parse(d)
         
+      
 
         await Promise.all(k.data.map(async (elem) => {
 
@@ -125,8 +128,6 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
         })
 
       });
-
-  },20000)
 });
 
         
@@ -2521,7 +2522,7 @@ function compareEstimoteBeacon(identifier) {
       const collection = db.collection("devices")
 
       collection.findOne({
-        Identifier: identifier
+        'Info.Identifier': identifier
       }, (err, result) => {
         if (err) {
           reject(err);
