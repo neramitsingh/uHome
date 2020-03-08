@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "17" && mins == "58")
+  if(hours == "18" && mins == "02")
   {
 
     smartLearning()
@@ -3505,9 +3505,9 @@ function smartLearning(){
       database: "mydb"
     });
     
-    con.connect(function(err) {
+    con.connect(async function(err) {
       if (err) throw err;
-      con.query("SELECT * FROM home", function (err, result, fields) {
+      con.query("SELECT * FROM home",async function (err, result, fields) {
         if (err) throw err;
         console.log(result);
 
@@ -3525,7 +3525,7 @@ function smartLearning(){
             
           }
       
-          collection2.find(query2).toArray(function (err, result2) {
+          collection2.find(query2).toArray(async function (err, result2) {
             if (err) throw err;
       
             await Promise.all(result2.map(async (elem2) => {
@@ -3546,11 +3546,11 @@ function smartLearning(){
                 ]
               }
         
-              collection.find(query).toArray(function (err, result3) {
+              collection.find(query).toArray(async function (err, result3) {
                 if (err) throw err;
         
                 // if(result.length != 0){
-                var totalTime = calculateUserActivity(result3).then(function (resolve) {
+                var totalTime = await calculateUserActivity(result3).then(function (resolve) {
         
                 console.log(resolve)
                 })
