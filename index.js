@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "01" && mins == "00")
+  if(hours == "17" && mins == "58")
   {
 
     smartLearning()
