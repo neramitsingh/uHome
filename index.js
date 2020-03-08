@@ -2522,7 +2522,7 @@ function compareEstimoteBeacon(identifier) {
       const collection = db.collection("devices")
 
       collection.findOne({
-        'Info.Identifier': identifier
+        'Info.identifier': identifier
       }, (err, result) => {
         if (err) {
           reject(err);
