@@ -2921,6 +2921,8 @@ app.post('/routine/add', (req, res) => {
 app.post('/routine/get', (req, res) => {
 
   var HomeID  = req.body.HomeID
+
+  var arr = []
   
   var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
 
@@ -2944,8 +2946,40 @@ app.post('/routine/get', (req, res) => {
       collection.find(query).toArray(function (err, result) {
         if (err) throw err;
 
+        var con = mysql.createConnection({
+          host: "127.0.0.1",
+          user: "root",
+          password: "",
+          database: "uhomesql"
+        });
+        
+        con.connect(async function(err) {
+          if (err) throw err;
+          console.log("Connected!");
+
+          await Promise.all(result.map(async (elem) => {
+  
+            var sql = `SELECT * FROM device WHERE DeviceID = ${elem.DeviceID};`
+    
+            con.query(sql, function (err, sqlresult) {
+              if (err) res.send({
+                message: err
+              })
+
+              elem.Name = sqlresult[0].Name
+
+
+              arr.push(elem)
+
+            });
+
+    
+          }))
+
+        });
+
         res.send({
-          message: result
+          message: arr
         })
       });
 
@@ -3109,11 +3143,40 @@ app.post('/delete/home', (req, res) => {
             var sql = `DELETE FROM device WHERE DeviceID = '${DeviceID}';`
       
             con.query(sql, function (err, result) {
-              if (err) res.send({
-                message: err
-              })
-              res.send({
-                message: "Deleted"
+              if (err){
+                res.send({
+                  message: err
+                })
+                return
+              } 
+
+              MongoClient.connect(uri, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+              }, (err, client) => {
+                if (err) {
+                  console.error(err)
+                  res.send({
+                    error: err
+                  })
+                }
+                const db = client.db(dbname)
+                const collection = db.collection("devices")
+          
+          
+                collection.deleteOne({
+                  DeviceID: DeviceID
+                }, (err, result) => {
+                  if (err) res.send(err)
+                  else {
+                    res.send({
+                      "message": "Device Deleted"
+                    })
+          
+                  }
+                })
+          
+                client.close();
               })
             });
       
