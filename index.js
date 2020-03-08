@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "22")
+  if(hours == "18" && mins == "25")
   {
 
     smartLearning()
@@ -3512,6 +3512,8 @@ function smartLearning(){
         console.log(result);
 
         await Promise.all(result.map(async (elem) => {
+
+          console.log(elem.HomeID)
 
           var query2 = {
             $and: [
