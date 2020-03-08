@@ -2608,7 +2608,7 @@ function getLightsAtHome(HomeID) {
       database: "uhomesql"
     });
 
-    var sql = `SELECT device.DeviceID FROM ((device INNER JOIN room ON device.RoomID = room.RoomID) INNER JOIN home on room.HomeID = home.HomeID) where home.HomeID = ${HomeID}`
+    var sql = `SELECT device.DeviceID, device.Name FROM ((device INNER JOIN room ON device.RoomID = room.RoomID) INNER JOIN home on room.HomeID = home.HomeID) where home.HomeID = ${HomeID}`
 
     con.connect(function (err) {
       if (err) reject(err)
@@ -3168,6 +3168,7 @@ app.post('/delete/home', (req, res) => {
             var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
 
               getLightsAtHome(HomeID).then((resolve)=>{
+                
                 res.send({
                   message: resolve
                 })
