@@ -2966,8 +2966,11 @@ app.post('/routine/get', (req, res) => {
                 message: err
               })
 
+              console.log(sqlresult)
+
               elem.Name = sqlresult[0].Name
 
+              console.log(elem)
 
               arr.push(elem)
 
