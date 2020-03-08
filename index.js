@@ -3370,7 +3370,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "25")
+  if(hours == "18" && mins == "27")
   {
 
     smartLearning()
@@ -3518,13 +3518,12 @@ function smartLearning(){
           var query2 = {
             $and: [
               {
-                HomeID: elem.HomeID
+                HomeID: elem.HomeID.toString()
               },
               {
                 Learn: true
               }
             ]
-            
           }
       
           collection2.find(query2).toArray(async function (err, result2) {
