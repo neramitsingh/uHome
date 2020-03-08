@@ -2976,11 +2976,13 @@ app.post('/routine/get', (req, res) => {
     
           }))
 
+          res.send({
+            message: arr
+          })
+
         });
 
-        res.send({
-          message: arr
-        })
+        
       });
 
       client.close();
