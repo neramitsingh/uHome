@@ -50,6 +50,8 @@ module.exports.notifyUsers = function (regTokens) {
 
   var arr = []
 
+  console.log("RegTokens: " + regTokens)
+
   message.addData('title', 'Warning');
   message.addData('body', `Danger detected`);
   //message.addData('play','true')
@@ -59,6 +61,7 @@ module.exports.notifyUsers = function (regTokens) {
     arr.push(regTokens[i].RegisID)
   }
 
+  console.log(arr)
 
   // Actually send the message
   sender.send(message, arr, function (err, response) {
