@@ -50,7 +50,7 @@ module.exports.notifyUsers = function (regTokens) {
 
   var arr = []
 
-  console.log("RegTokens: " + regTokens)
+  console.log("RegTokens: " + JSON.stringify(regTokens))
 
   message.addData('title', 'Warning');
   message.addData('body', `Danger detected`);

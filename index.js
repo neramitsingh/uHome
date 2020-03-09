@@ -1095,7 +1095,7 @@ app.post('/api/starttimer', (req, res) => {
                 } else console.log('No Danger')
               }
             })
-          }, timeOut); //Time in ms
+          }, 1000); //Time in ms
 
         }
       })
