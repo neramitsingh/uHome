@@ -3480,7 +3480,7 @@ function deleteSunfromRoutine()
 }
 
 
-function smartLearning(){
+async function smartLearning(){
 
   var date = getDateString()
 
