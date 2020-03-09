@@ -3406,7 +3406,7 @@ setInterval(()=>{
   if(hours == "21")
   {
 
-    smartLearning()
+    //smartLearning()
 
   }
 
@@ -3627,6 +3627,8 @@ function getDateString(){
 
   return dateString
 }
+
+smartLearning()
 
 
 

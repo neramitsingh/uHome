@@ -45,6 +45,7 @@ module.exports.calculateAvg = function(arr, days){
 
         var total = 0.00;
         for(let i = 0; i < arr.length; i++){
+            console.log("i = "+ i)
             if(i%2 != 0){
                 console.log("Odd")
                 console.log(arr[i])
