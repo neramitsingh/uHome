@@ -37,11 +37,12 @@ resolve(arr)
 }
 
 
-module.exports.calculateAvg = function(arr, days){
+module.exports.calculateAvg = function(arr, times){
 
     console.log("In calculate function: ")
     console.log("Arr = " + JSON.stringify(arr))
     console.log("Length = "+ arr.length)
+    console.log("Times = "+times)
 
     return new Promise((resolve,reject)=>{
 
@@ -62,7 +63,7 @@ module.exports.calculateAvg = function(arr, days){
 
         console.log(total)
 
-        var avg = total/days
+        var avg = total/times
 
         resolve(avg)
 
