@@ -3403,7 +3403,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "16" && mins == "33")
+  if(hours == "21")
   {
 
     smartLearning()
