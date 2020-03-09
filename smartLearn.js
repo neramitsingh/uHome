@@ -93,9 +93,7 @@ module.exports.sdDataPrep = function (result) {
       var arr = []
   
       for (let i = 0; i < result.length; i++) {
-  
- 
-  
+
           var date1 = Number(result[i].StopTimer[0])
           var date2 = Number(result[i].StartTime)
   
@@ -104,9 +102,11 @@ module.exports.sdDataPrep = function (result) {
   
           console.log("Date 1: " + date1)
           console.log("Date 2: " + date2)
+
+          var value = date1 - date2
   
   
-          arr.push(date1 - date2)
+          arr.push(value)
       }
 
       console.log(JSON.stringify(arr))

@@ -2724,12 +2724,12 @@ function calculateUserActivity(result) {
 
     for (let i = 0; i < result.length; i++) {
 
+      var date1 = Number(result[i].StopTimer[0])
+      var date2 = Number(result[i].StartTime)
+
       var stop = (result[i].StopTimer[0])
 
       if (!(`${result[i].Name}` in arr)) {
-
-        var date1 = Number(result[i].StopTimer[0])
-        var date2 = Number(result[i].StartTime)
 
         console.log(typeof date1)
         console.log(typeof date2)
