@@ -68,12 +68,51 @@ module.exports.calculateAvg = function(arr, times){
         resolve(avg)
 
 
-        },3000)
-
-        
+        },1000)
+ 
 
     })
 }
+
+module.exports.calculateSD = function(data, mean, times){
+
+    return new Promise((resolve,reject)=>{
+
+    var sd = math.std(data)
+ 
+    resolve(sd)
+
+    })
+}
+
+module.exports.sdDataPrep = function (result) {
+    return new Promise((resolve, reject) => {
+  
+      var arr = []
+  
+      for (let i = 0; i < result.length; i++) {
+  
+ 
+  
+          var date1 = Number(result[i].StopTimer[0])
+          var date2 = Number(result[i].StartTime)
+  
+          console.log(typeof date1)
+          console.log(typeof date2)
+  
+          console.log("Date 1: " + date1)
+          console.log("Date 2: " + date2)
+  
+  
+          arr.push(date1 - date2)
+      }
+
+      console.log(JSON.stringify(arr))
+  
+      setTimeout(resolve(arr), 3000)
+  
+    })
+  }
 
 
 
