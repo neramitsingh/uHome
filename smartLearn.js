@@ -41,6 +41,7 @@ module.exports.calculateAvg = function(arr, days){
 
     console.log("In calculate function: ")
     console.log("Arr = " + arr)
+    console.log("Length = "+ arr.length)
 
     return new Promise((resolve,reject)=>{
 
@@ -64,7 +65,7 @@ module.exports.calculateAvg = function(arr, days){
         resolve(avg)
 
 
-        },1000)
+        },3000)
 
         
 
