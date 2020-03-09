@@ -3060,6 +3060,38 @@ app.post('/delete/home', (req, res) => {
         res.send({
           message: "Deleted"
         })
+        
+        MongoClient.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        }, (err, client) => {
+          if (err) {
+            console.error(err)
+            res.send({
+              error: err
+            })
+          }
+          const db = client.db(dbname)
+          const collection = db.collection("setting")
+    
+    
+          collection.deleteOne({
+            HomeID: HomeID
+          }, (err, result) => {
+            if (err) res.send(err)
+            else {
+              // res.send({
+              //   "message": "Device Deleted"
+              // })
+              console.log("Deleted from Devices")
+    
+            }
+          })
+
+
+    
+          client.close();
+        })
       });
 
     });
@@ -3143,6 +3175,7 @@ app.post('/delete/home', (req, res) => {
                 }
                 const db = client.db(dbname)
                 const collection = db.collection("devices")
+                const collection2 = db.collection("routine")
           
           
                 collection.deleteOne({
@@ -3150,12 +3183,29 @@ app.post('/delete/home', (req, res) => {
                 }, (err, result) => {
                   if (err) res.send(err)
                   else {
-                    res.send({
-                      "message": "Device Deleted"
-                    })
+                    // res.send({
+                    //   "message": "Device Deleted"
+                    // })
+                    console.log("Deleted from Devices")
           
                   }
                 })
+
+                collection2.deleteMany({
+                  DeviceID: DeviceID
+                }, (err, result) => {
+                  if (err) res.send(err)
+                  else {
+                    // res.send({
+                    //   "message": "Device Deleted"
+                    // })
+                    console.log("Deleted from Routine")
+                    res.send({
+                      message: "Deleted"
+                    })
+                  }
+                })
+
           
                 client.close();
               })
