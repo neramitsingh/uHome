@@ -3575,9 +3575,9 @@ async function smartLearning(){
                   {
                     current: false
                   },
-                  {
-                    $or: weekArray
-                  },
+                  // {
+                  //   $or: weekArray
+                  // },
                   {
                     HomeID: elem2.HomeID
                   },
@@ -3593,7 +3593,7 @@ async function smartLearning(){
                 console.log(result3)
                 var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
         
-                var resultAvg = await smart.calculateAvg(resolve)                 
+                var resultAvg = await smart.calculateAvg(resolve, result3.length)                 
                 console.log(resultAvg)
                 })
               });

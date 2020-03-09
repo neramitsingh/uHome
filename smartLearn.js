@@ -37,7 +37,7 @@ resolve(arr)
 }
 
 
-module.exports.calculateAvg = function(arr){
+module.exports.calculateAvg = function(arr, days){
 
     return new Promise((resolve,reject)=>{
 
@@ -51,11 +51,18 @@ module.exports.calculateAvg = function(arr){
             }
         }
 
+        setTimeout(()=>{
+
         console.log(total)
 
-        var avg = total/7
+        var avg = total/days
 
         resolve(avg)
+
+
+        },1000)
+
+        
 
     })
 }
