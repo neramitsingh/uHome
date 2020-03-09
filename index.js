@@ -12,6 +12,7 @@ const estimote = require('./estimote')
 const routine = require('./routine')
 const sun = require('./sun')
 const authen = require('./authen')
+const smart = require('./smartLearn')
 
 
 const https = require('https');
@@ -3370,7 +3371,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "18" && mins == "32")
+  if(hours == "15" && mins == "18")
   {
 
     smartLearning()
@@ -3483,6 +3484,8 @@ function smartLearning(){
 
   var date = getDateString()
 
+  var weekArray = await smart.getWeekArray(date)
+
   MongoClient.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -3541,7 +3544,7 @@ function smartLearning(){
                     current: false
                   },
                   {
-                    Date: date
+                    $or: weekArray
                   },
                   {
                     HomeID: elem2.HomeID
@@ -3558,7 +3561,8 @@ function smartLearning(){
                 console.log(result3)
                 var totalTime = await calculateUserActivity(result3).then(function (resolve) {
         
-                console.log(resolve)
+                var result = await smart.calculateAvg(resolve)                 
+                console.log(result)
                 })
               });
 
