@@ -2924,13 +2924,19 @@ app.post('/routine/get', (req, res) => {
           console.log("Connected!");
 
           await Promise.all(result.map(async (elem) => {
+
+            console.log(elem.DeviceID)
   
             var sql = `SELECT * FROM device WHERE DeviceID = ${elem.DeviceID};`
     
             con.query(sql, function (err, sqlresult) {
-              if (err) res.send({
-                message: err
-              })
+              if (err){
+                console.log(err)
+                res.send({
+                  message: err
+                })
+                return
+              } 
 
               console.log(sqlresult)
 
