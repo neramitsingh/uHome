@@ -3371,7 +3371,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "15" && mins == "18")
+  if(hours == "15" && mins == "24")
   {
 
     smartLearning()
@@ -3559,7 +3559,7 @@ async function smartLearning(){
                 if (err) throw err;
         
                 console.log(result3)
-                var totalTime = await calculateUserActivity(result3).then(function (resolve) {
+                var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
         
                 var result = await smart.calculateAvg(resolve)                 
                 console.log(result)
