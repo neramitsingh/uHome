@@ -55,8 +55,10 @@ module.exports.notifyUsers = function (regTokens) {
   // Actually send the message
   sender.send(message, regTokens, function (err, response) {
     if (err) {
+      console.log("From Noti.js")
       console.error(err);
     } else {
+      console.log("From Noti.js")
       console.log(response);
     }
 
