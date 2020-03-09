@@ -1084,7 +1084,7 @@ app.post('/api/starttimer', (req, res) => {
                     
                     con.connect(async function(err) {
                       if (err) console.log(err)
-                      con.query("SELECT * FROM home",async function (err, result, fields) {
+                      con.query(sql,async function (err, result, fields) {
                         if (err) throw err;
 
                         noti.notifyUsers(result)
