@@ -3594,7 +3594,7 @@ async function smartLearning(){
                 var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
         
                 var resultAvg = await smart.calculateAvg(resolve, result3.length)                 
-                console.log(resultAvg)
+                console.log(resultAvg/60000)
                 })
               });
 
