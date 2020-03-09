@@ -44,12 +44,12 @@ module.exports.findPhone = function (regTokens) {
 
 }
 
-module.exports.notifyUsers = function (regTokens, HomeName) {
+module.exports.notifyUsers = function (regTokens) {
 
   var message = new gcm.Message();
 
   message.addData('title', 'Warning');
-  message.addData('body', `Warning at ${HomeName}`);
+  message.addData('body', `Danger detected`);
   //message.addData('play','true')
 
   // Actually send the message

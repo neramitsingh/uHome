@@ -1045,6 +1045,16 @@ app.post('/api/starttimer', (req, res) => {
       }
       const db = client.db(dbname)
       const collection = db.collection("timer")
+      const collection2 = db.collection("setting")
+
+      collection2.find({HomeID: HomeID}).toArray((err, items) => {
+        if (err) console.log(err)
+        var timeOut = items[0].NotiTime
+
+        timeOut = Number(timeOut)
+        timeOut = timeOut * 60000
+      })
+
       collection.insertOne(timer, (err, result) => {
         if (err) res.send(err)
         else {
@@ -1060,10 +1070,30 @@ app.post('/api/starttimer', (req, res) => {
                 console.log(current)
                 if (current === true) {
                   console.log('Danger')
+
+                  var con = mysql.createConnection({
+                    host: "127.0.0.1",
+                    user: "root",
+                    password: "",
+                    database: "uhomesql"
+                });
+
+                var sql = `SELECT user_noti.RegisID FROM home_user inner join user_noti on home_user.UserID = user_noti.UserID where HomeID = ${HomeID}`
+                    
+                    con.connect(async function(err) {
+                      if (err) console.log(err)
+                      con.query("SELECT * FROM home",async function (err, result, fields) {
+                        if (err) throw err;
+
+                        noti.notifyUsers(result)
+                        
+                      })
+                    })
+
                 } else console.log('No Danger')
               }
             })
-          }, 36000); //Time in ms
+          }, timeOut); //Time in ms
 
         }
       })
