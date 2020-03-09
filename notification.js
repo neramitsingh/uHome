@@ -48,12 +48,20 @@ module.exports.notifyUsers = function (regTokens) {
 
   var message = new gcm.Message();
 
+  var arr = []
+
   message.addData('title', 'Warning');
   message.addData('body', `Danger detected`);
   //message.addData('play','true')
 
+  for(let i = 0; i < regTokens.length; i++){
+
+    arr.push(regTokens[i].RegisID)
+  }
+
+
   // Actually send the message
-  sender.send(message, regTokens, function (err, response) {
+  sender.send(message, arr, function (err, response) {
     if (err) {
       console.log("From Noti.js")
       console.error(err);
