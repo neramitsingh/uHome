@@ -3590,7 +3590,7 @@ async function smartLearning(){
               collection.find(query).toArray(async function (err, result3) {
                 if (err) throw err;
         
-                console.log(result3)
+                //console.log(result3)
                 var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
         
                 var resultAvg = await smart.calculateAvg(resolve, result3.length)                 

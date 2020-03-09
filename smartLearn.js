@@ -39,6 +39,8 @@ resolve(arr)
 
 module.exports.calculateAvg = function(arr, days){
 
+    console.log("In calculate function: ")
+
     return new Promise((resolve,reject)=>{
 
         var total = 0.00;
