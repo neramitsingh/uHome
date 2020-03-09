@@ -1095,7 +1095,7 @@ app.post('/api/starttimer', (req, res) => {
                 } else console.log('No Danger')
               }
             })
-          }, 1000); //Time in ms
+          }, timeOut); //Time in ms
 
         }
       })
@@ -3403,7 +3403,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "15" && mins == "35")
+  if(hours == "16" && mins == "33")
   {
 
     smartLearning()
