@@ -1047,9 +1047,11 @@ app.post('/api/starttimer', (req, res) => {
       const collection = db.collection("timer")
       const collection2 = db.collection("setting")
 
+      var timeOut = 1;
+
       collection2.find({HomeID: HomeID}).toArray((err, items) => {
         if (err) console.log(err)
-        var timeOut = items[0].NotiTime
+        timeOut = items[0].NotiTime
 
         timeOut = Number(timeOut)
         timeOut = timeOut * 60000
