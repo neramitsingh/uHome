@@ -41,12 +41,17 @@ module.exports.calculateAvg = function(arr){
 
     return new Promise((resolve,reject)=>{
 
-        var total = 0;
+        var total = 0.00;
         for(let i = 0; i < arr.length; i++){
             if(i%2 != 0){
+                console.log("Odd")
+                console.log(arr[i])
                 total = total + arr[i]
+                
             }
         }
+
+        console.log(total)
 
         var avg = total/7
 
