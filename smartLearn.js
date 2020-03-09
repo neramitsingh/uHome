@@ -72,7 +72,7 @@ module.exports.calculateAvg = function(arr){
 
         // },1000)
 
-        var result = math.sum(arr)
+        var result = math.mean(arr)
 
 
         resolve(result)
