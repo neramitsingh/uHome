@@ -3590,23 +3590,26 @@ async function smartLearning(){
               collection.find(query).toArray(async function (err, result3) {
                 if (err) throw err;
 
-                var times = result3.length
+                //var times = result3.length
         
                 //console.log(result3)
-                var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
-        
-                var resultAvg = await smart.calculateAvg(resolve, times)                 
-                //console.log(resultAvg/60000)
+                //var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
 
-                var data = await smart.sdDataPrep(result3)
+                var data = await smart.statDataPrep(result3)
+        
+                var resultAvg = await smart.calculateAvg(data)                 
+                //console.log(resultAvg/60000)
 
                 var sd = await smart.calculateSD(data)
 
-                console.log(sd)
+                console.log("Avg = " + resultAvg)
+                console.log("SD = "+sd)
+                console.log("Avg + SD"+(resultAvg+sd))
+                console.log("Minutes ="+((resultAvg+sd)/60000))
 
 
                 //var sd = await smart.calculateSD(result3, resultAvg, times)
-                })
+                //})
               });
 
             }))

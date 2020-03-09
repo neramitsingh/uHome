@@ -39,38 +39,44 @@ resolve(arr)
 }
 
 
-module.exports.calculateAvg = function(arr, times){
+module.exports.calculateAvg = function(arr){
 
-    console.log("In calculate function: ")
-    console.log("Arr = " + JSON.stringify(arr))
-    console.log("Length = "+ arr.length)
-    console.log("Times = "+times)
+    // console.log("In calculate function: ")
+    // console.log("Arr = " + JSON.stringify(arr))
+    // console.log("Length = "+ arr.length)
+    // console.log("Times = "+times)
 
     return new Promise((resolve,reject)=>{
 
-        var total = 0.00;
-        for(let i = 0; i < arr.length; i++){
-            for(let j = 0; j<arr[i].length; j++){
-                if(j%2 != 0){
-                    console.log("Odd")
-                    console.log(arr[i][j])
-                    total = total + arr[i][j]
+        // var total = 0.00;
+        // for(let i = 0; i < arr.length; i++){
+        //     for(let j = 0; j<arr[i].length; j++){
+        //         if(j%2 != 0){
+        //             console.log("Odd")
+        //             console.log(arr[i][j])
+        //             total = total + arr[i][j]
                     
-                }
-            }
+        //         }
+        //     }
             
-        }
+        // }
 
-        setTimeout(()=>{
+        // setTimeout(()=>{
 
-        console.log(total)
+        // console.log(total)
 
-        var avg = total/times
+        // var avg = total/times
 
-        resolve(avg)
+        // resolve(avg)
 
 
-        },1000)
+        // },1000)
+
+        var result = math.sum(arr)
+
+
+        resolve(result)
+
  
 
     })
@@ -87,7 +93,7 @@ module.exports.calculateSD = function(data, mean, times){
     })
 }
 
-module.exports.sdDataPrep = function (result) {
+module.exports.statDataPrep = function (result) {
     return new Promise((resolve, reject) => {
   
       var arr = []
