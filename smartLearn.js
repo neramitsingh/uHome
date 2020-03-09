@@ -50,6 +50,8 @@ module.exports.calculateAvg = function(arr){
 
         var avg = total/7
 
+        resolve(avg)
+
     })
 }
 
