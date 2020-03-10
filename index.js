@@ -1055,10 +1055,15 @@ app.post('/api/starttimer', (req, res) => {
         HomeID: HomeID
       }).toArray((err, items) => {
         if (err) console.log(err)
-        timeOut = items[0].NotiTime
 
-        timeOut = Number(timeOut)
-        timeOut = timeOut * 60000
+        if(items.length != 0){
+
+          timeOut = items[0].NotiTime
+
+          timeOut = Number(timeOut)
+          timeOut = timeOut * 60000
+        }
+        
       })
 
       collection.insertOne(timer, (err, result) => {
@@ -1067,39 +1072,45 @@ app.post('/api/starttimer', (req, res) => {
           objectid = timer._id
           res.status(200).send(timer)
 
-          setTimeout(function (timer) {
-            console.log('starting')
-            collection.find(ObjectId(objectid)).toArray((err, items) => {
-              if (err) console.log(err)
-              else {
-                let current = items[0].current;
-                console.log(current)
-                if (current === true) {
-                  console.log('Danger')
+          if(Type == "Bathroom"){
 
-                  var con = mysql.createConnection({
-                    host: "127.0.0.1",
-                    user: "root",
-                    password: "",
-                    database: "uhomesql"
-                  });
-
-                  var sql = `SELECT user_noti.RegisID FROM home_user inner join user_noti on home_user.UserID = user_noti.UserID where HomeID = ${HomeID}`
-
-                  con.connect(async function (err) {
-                    if (err) console.log(err)
-                    con.query(sql, async function (err, result, fields) {
-                      if (err) throw err;
-
-                      noti.notifyUsers(result)
-
+            setTimeout(function (timer) {
+              console.log('starting')
+              collection.find(ObjectId(objectid)).toArray((err, items) => {
+                if (err) console.log(err)
+                else {
+                  let current = items[0].current;
+                  console.log(current)
+                  if (current === true) {
+                    console.log('Danger')
+  
+                    var con = mysql.createConnection({
+                      host: "127.0.0.1",
+                      user: "root",
+                      password: "",
+                      database: "uhomesql"
+                    });
+  
+                    var sql = `SELECT user_noti.RegisID FROM home_user inner join user_noti on home_user.UserID = user_noti.UserID where HomeID = ${HomeID}`
+  
+                    con.connect(async function (err) {
+                      if (err) console.log(err)
+                      con.query(sql, async function (err, result, fields) {
+                        if (err) throw err;
+  
+                        noti.notifyUsers(result)
+  
+                      })
                     })
-                  })
+  
+                  } else console.log('No Danger')
+                }
+              })
+            }, timeOut); //Time in ms
 
-                } else console.log('No Danger')
-              }
-            })
-          }, timeOut); //Time in ms
+          }
+
+          
 
         }
       })
@@ -1166,8 +1177,10 @@ app.post('/api/stoptimer', (req, res) => {
 
 app.post('/api/getUserActivity', (req, res) => {
 
+  console.log("Called getUserActivity")
+
   var date = req.body.date
-  var HomeID = req.body.HomeID0
+  var HomeID = req.body.HomeID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
