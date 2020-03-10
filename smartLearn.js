@@ -122,5 +122,34 @@ module.exports.statDataPrep = function (result) {
     })
   }
 
+  module.exports.calculateUserTimes = function (result) {
+    return new Promise((resolve, reject) => {
+  
+      var arr = {}
+  
+      for (let i = 0; i < result.length; i++) {
+  
+  
+        if (!(`${result[i].Name}` in arr)) {
+
+  
+          arr[`${result[i].Name}`] = 1;
+  
+          //console.log(arr[`${result[i].RoomID}`])
+        } else {
+          let temp = arr[`${result[i].Name}`]
+          arr[`${result[i].Name}`] = temp + 1;
+        }
+      }
+  
+      console.log(arr)
+  
+      var arr2 = Object.entries(arr)
+  
+      setTimeout(resolve(arr2), 3000)
+  
+    })
+  }
+
 
 

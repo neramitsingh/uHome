@@ -601,7 +601,7 @@ app.post('/user/addtoHome', (req, res) => {
           "message": err
         })
 
-        var check = `SELECT * FROM home_user WHERE HomeID = "${homeID}" AND  UserID = "${resolve}"`
+        var check = `SELECT * FROM home_user WHERE HomeID = "${homeID}" AND UserID = "${resolve}"`
 
         con.query(check, function (err, result) {
           console.log(result)
@@ -627,9 +627,6 @@ app.post('/user/addtoHome', (req, res) => {
           }
 
         })
-
-
-
 
       });
     }).catch(function (reject) {
@@ -3222,6 +3219,8 @@ app.post('/delete/home', (req, res) => {
 
         app.post('/delete/userfromhome', (req, res) => {
 
+          var HomeID = req.body.HomeID
+
           var UserID = req.body.UserID
         
           var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
@@ -3236,7 +3235,7 @@ app.post('/delete/home', (req, res) => {
             con.connect(function(err) {
               if (err) throw err;
               console.log("Connected!");
-              var sql = `DELETE FROM home_user WHERE UserID = '${UserID}';`
+              var sql = `DELETE FROM home_user WHERE UserID = '${UserID}' AND HomeID = '${HomeID}' ;`
         
               con.query(sql, function (err, result) {
                 if (err) res.send({
@@ -3459,7 +3458,7 @@ setInterval(()=>{
     })
   }
 
-  if(hours == "21")
+  if(hours == "00" && mins == "00")
   {
 
     //smartLearning()
@@ -3621,54 +3620,65 @@ async function smartLearning(){
             if (err) console.log(err)
 
             console.log(result2)
+
+            if(result2.length != 0)
+            {
+              await Promise.all(result2.map(async (elem2) => {
+
+                var query = {
+                  $and: [{
+                      uid: elem2.UserID
+                    },
+                    {
+                      current: false
+                    },
+                    // {
+                    //   $or: weekArray
+                    // },
+                    {
+                      HomeID: elem2.HomeID
+                    },
+                    {
+                      Type: "Bathroom"
+                    }
+                  ]
+                }
+          
+                collection.find(query).toArray(async function (err, result3) {
+                  if (err) throw err;
+  
+                  //var times = result3.length
+          
+                  //console.log(result3)
+                  //var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
+  
+                  var data = await smart.statDataPrep(result3)
+          
+                  var resultAvg = await smart.calculateAvg(data)                 
+                  //console.log(resultAvg/60000)
+  
+                  var sd = await smart.calculateSD(data)
+  
+                  console.log("Avg = " + resultAvg)
+                  console.log("SD = "+sd)
+                  console.log("Avg + SD"+(resultAvg+sd))
+                  console.log("Minutes ="+((resultAvg+sd)/60000))
+  
+
+
+                  //var sd = await smart.calculateSD(result3, resultAvg, times)
+                  //})
+
+
+
+
+                });
+  
+              }))
+              
+            }
       
-            await Promise.all(result2.map(async (elem2) => {
-
-              var query = {
-                $and: [{
-                    uid: elem2.UserID
-                  },
-                  {
-                    current: false
-                  },
-                  // {
-                  //   $or: weekArray
-                  // },
-                  {
-                    HomeID: elem2.HomeID
-                  },
-                  {
-                    Type: "Bathroom"
-                  }
-                ]
-              }
-        
-              collection.find(query).toArray(async function (err, result3) {
-                if (err) throw err;
-
-                //var times = result3.length
-        
-                //console.log(result3)
-                //var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
-
-                var data = await smart.statDataPrep(result3)
-        
-                var resultAvg = await smart.calculateAvg(data)                 
-                //console.log(resultAvg/60000)
-
-                var sd = await smart.calculateSD(data)
-
-                console.log("Avg = " + resultAvg)
-                console.log("SD = "+sd)
-                console.log("Avg + SD"+(resultAvg+sd))
-                console.log("Minutes ="+((resultAvg+sd)/60000))
-
-
-                //var sd = await smart.calculateSD(result3, resultAvg, times)
-                //})
-              });
-
-            }))
+            
 
             
           });
