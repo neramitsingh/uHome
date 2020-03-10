@@ -1200,7 +1200,7 @@ app.post('/api/getUserActivity', (req, res) => {
         if (err) throw err;
 
         // if(result.length != 0){
-        var toSend = calculateUserActivity(result).then(function (resolve) {
+        var toSend = calculateUserActivity(result).then( function (resolve) {
 
           res.send({
             message: resolve
@@ -1257,7 +1257,7 @@ app.post('/api/getUserAverage', (req, res) => {
         if (err) throw err;
 
         // if(result.length != 0){
-        var toSend = calculateUserActivity(result).then(function (resolve) {
+        var toSend = calculateUserActivity(result).then(async function (resolve) {
 
           var times =  await smart.calculateUserTimes(resolve)
 
