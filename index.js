@@ -1,11 +1,12 @@
 const express = require('express')
 
+//Enviromnet Variables
 const MongoClient = require("mongodb").MongoClient;
 const dbname = "uHomeDB"
 const uri = "mongodb+srv://uHomeB:uhome@uhome-bakds.mongodb.net/test?retryWrites=true&w=majority";
 const ObjectId = require('mongodb').ObjectID;
 
-
+//Function from other pages
 const hue = require('./hue')
 const noti = require('./notification')
 const estimote = require('./estimote')
@@ -14,17 +15,21 @@ const sun = require('./sun')
 const authen = require('./authen')
 const smart = require('./smartLearn')
 
-
+//Including libraries
 const https = require('https');
 const mysql = require('mysql');
 const request = require('request');
+const math = require('mathjs')
+const cors = require('cors')
+var randomstring = require("randomstring");
+
 
 const app = express();
-const cors = require('cors')
 
 
 
-var randomstring = require("randomstring");
+
+
 
 
 //const url = "mongodb://localhost:27017/";
@@ -1162,7 +1167,7 @@ app.post('/api/stoptimer', (req, res) => {
 app.post('/api/getUserActivity', (req, res) => {
 
   var date = req.body.date
-  var HomeID = req.body.HomeID
+  var HomeID = req.body.HomeID0
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
@@ -1259,7 +1264,7 @@ app.post('/api/getUserAverage', (req, res) => {
         // if(result.length != 0){
         var toSend = calculateUserActivity(result).then(async function (resolve) {
 
-          var times =  await smart.calculateUserTimes(resolve)
+          var times =  await smart.calculateUserTimes(result)
 
           var avg = await smart.calculateAverageAll(resolve, times)
 
@@ -3748,13 +3753,25 @@ async function smartLearning() {
                   console.log("Avg + SD" + (resultAvg + sd))
                   console.log("Minutes =" + ((resultAvg + sd) / 60000))
 
+                  var smartValue = math.round(((resultAvg + sd)/60000))
 
 
-                  //var sd = await smart.calculateSD(result3, resultAvg, times)
-                  //})
-
-
-
+                  var newvalues = {
+                    $set: {
+                      NotiTime: smartValue
+                    }
+                  };
+          
+                  collection2.updateOne({
+                    //_id: ObjectId("5e384705f372471f18d611f1")
+                    HomeID: elem2.HomeID
+                  }, newvalues, (err, result) => {
+                    if (err) res.send(err)
+                    
+                    console.log("Noti Time updated")
+                  })
+                 
+                  
 
                 });
 
@@ -3772,8 +3789,8 @@ async function smartLearning() {
 
       });
     });
+    client.close()
   });
-
 
 }
 
