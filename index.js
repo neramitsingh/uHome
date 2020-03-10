@@ -87,8 +87,8 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
       method: 'GET',
       //auth: 'uhome-g7u:edeae45dd50b1d0ff0f4efbe7f165a91',
       auth: {
-          username: AppID,
-          password: AppToken
+        username: AppID,
+        password: AppToken
       },
       headers: {
         'Access-Control-Allow-Origin': '*',
@@ -98,33 +98,33 @@ app.post('/admin/getDevice/Estimote/Beacon', (req, res) => {
     };
 
     request(options, async (err, resp, body) => {
-        if (err) {
-            res.send({
-              message: error
-            })
-            return console.log(err);
-        }
-        console.log(JSON.parse(body));
-
-        var k = JSON.parse(body)
-
-        await Promise.all(k.data.map(async (elem) => {
-
-          var exists = await compareEstimoteBeacon(elem.identifier).catch(function (reject) {
-            res.send({
-              message: "error"
-            })
-          })
-
-          if (exists == false) {
-            data.push(elem)
-          }
-
-        }))
-
+      if (err) {
         res.send({
-          message: data
+          message: error
         })
+        return console.log(err);
+      }
+      console.log(JSON.parse(body));
+
+      var k = JSON.parse(body)
+
+      await Promise.all(k.data.map(async (elem) => {
+
+        var exists = await compareEstimoteBeacon(elem.identifier).catch(function (reject) {
+          res.send({
+            message: "error"
+          })
+        })
+
+        if (exists == false) {
+          data.push(elem)
+        }
+
+      }))
+
+      res.send({
+        message: data
+      })
 
     });
 
@@ -167,19 +167,19 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
   var Length = req.body.Length
   var Width = req.body.Width
 
-  var size,power
+  var size, power
 
-  if(Length >= Width) size = Length
+  if (Length >= Width) size = Length
   else size = Width
 
-  if(size <= 1) power = -40
-  else if(size <= 3.5) power = -20
-  else if(size <= 7) power = -16
-  else if(size <= 15) power = -12
-  else if(size <= 30) power = -8
-  else if(size <= 40) power = -4
-  else if(size <= 50) power = 0
-  else if(size <= 70) power = 4
+  if (size <= 1) power = -40
+  else if (size <= 3.5) power = -20
+  else if (size <= 7) power = -16
+  else if (size <= 15) power = -12
+  else if (size <= 30) power = -8
+  else if (size <= 40) power = -4
+  else if (size <= 50) power = 0
+  else if (size <= 70) power = 4
   else power = 20
 
 
@@ -251,7 +251,7 @@ app.post('/admin/addDevice/Estimote/Beacon', (req, res) => {
 
         ////////////////////////////////////////////////////////////////////
 
-        await estimote.postSettings(AppID,AppToken,est.Info.identifier,power)
+        await estimote.postSettings(AppID, AppToken, est.Info.identifier, power)
 
         await getEstimoteBeaconAttachments(AppID, AppToken).then(function (resolve) {
 
@@ -1046,7 +1046,9 @@ app.post('/api/starttimer', (req, res) => {
 
       var timeOut = 1;
 
-      collection2.find({HomeID: HomeID}).toArray((err, items) => {
+      collection2.find({
+        HomeID: HomeID
+      }).toArray((err, items) => {
         if (err) console.log(err)
         timeOut = items[0].NotiTime
 
@@ -1075,19 +1077,19 @@ app.post('/api/starttimer', (req, res) => {
                     user: "root",
                     password: "",
                     database: "uhomesql"
-                });
+                  });
 
-                var sql = `SELECT user_noti.RegisID FROM home_user inner join user_noti on home_user.UserID = user_noti.UserID where HomeID = ${HomeID}`
-                    
-                    con.connect(async function(err) {
-                      if (err) console.log(err)
-                      con.query(sql,async function (err, result, fields) {
-                        if (err) throw err;
+                  var sql = `SELECT user_noti.RegisID FROM home_user inner join user_noti on home_user.UserID = user_noti.UserID where HomeID = ${HomeID}`
 
-                        noti.notifyUsers(result)
-                        
-                      })
+                  con.connect(async function (err) {
+                    if (err) console.log(err)
+                    con.query(sql, async function (err, result, fields) {
+                      if (err) throw err;
+
+                      noti.notifyUsers(result)
+
                     })
+                  })
 
                 } else console.log('No Danger')
               }
@@ -1218,6 +1220,81 @@ app.post('/api/getUserActivity', (req, res) => {
 });
 
 
+app.post('/api/getUserAverage', (req, res) => {
+
+  var HomeID = req.body.HomeID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    let id = resolve.uid
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("timer")
+
+      var query = {
+        $and: [{
+            uid: id
+          },
+          {
+            current: false
+          },
+          {
+            HomeID: HomeID
+          }
+        ]
+      }
+
+      collection.find(query).toArray(function (err, result) {
+        if (err) throw err;
+
+        // if(result.length != 0){
+        var toSend = calculateUserActivity(result).then(function (resolve) {
+
+          var times =  await smart.calculateUserTimes(resolve)
+
+          var avg = await smart.calculateAverageAll(resolve, times)
+
+          res.send({
+            message: avg
+          })
+
+
+
+          // res.send({
+          //   message: resolve
+          // })
+        })
+      });
+
+      client.close();
+
+    })
+
+  }).catch(function (reject) {
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+});
+
+
+
+
+
+
+
+
+
+
 app.post('/home/getUserLocations', (req, res) => {
 
   var arr = []
@@ -1264,9 +1341,9 @@ app.post('/home/getUserLocations', (req, res) => {
           const collection = db.collection("timer")
 
 
-        await Promise.all(result.map(async (elem) => {
+          await Promise.all(result.map(async (elem) => {
 
-          var user = await authen.getUser(elem.UserID);
+            var user = await authen.getUser(elem.UserID);
 
             var query = {
               $and: [{
@@ -1285,9 +1362,9 @@ app.post('/home/getUserLocations', (req, res) => {
             }
 
             console.log("UID: " + elem.UserID)
-            console.log(typeof(elem.UserID))
-            console.log("Date: "+dateString)
-            console.log("HomeID: "+HomeID)
+            console.log(typeof (elem.UserID))
+            console.log("Date: " + dateString)
+            console.log("HomeID: " + HomeID)
 
             collection.find(query).toArray(function (err, result) {
               if (err) console.log(err);
@@ -1299,21 +1376,20 @@ app.post('/home/getUserLocations', (req, res) => {
               console.log(result.length)
 
               if (result.length != 0) {
-                var time = new Date(result[result.length-1].StartTime)
+                var time = new Date(result[result.length - 1].StartTime)
 
-                var hours = ('0'+ (time.getHours())).slice(-2)
+                var hours = ('0' + (time.getHours())).slice(-2)
                 var mins = ('0' + time.getMinutes()).slice(-2)
 
                 var obj = {
                   UserID: elem.UserID,
-                  RoomName: result[result.length-1].Name,
+                  RoomName: result[result.length - 1].Name,
                   UserName: user.displayName,
                   EnterTime: `${hours}:${mins}`
                 }
 
                 arr.push(obj)
-              }
-              else{
+              } else {
                 console.log("Nothing found")
                 var obj = {
                   UserID: elem.UserID,
@@ -1323,14 +1399,14 @@ app.post('/home/getUserLocations', (req, res) => {
                 }
 
                 arr.push(obj)
-     
+
               }
 
             });
 
-        }))
+          }))
 
-        client.close();
+          client.close();
         })
 
       });
@@ -1340,11 +1416,11 @@ app.post('/home/getUserLocations', (req, res) => {
 
     // console.log(arr)
 
-    setTimeout(()=>{
+    setTimeout(() => {
       res.send({
         message: arr
       })
-    },2000)
+    }, 2000)
 
     // res.send({
     //   message: arr
@@ -2816,7 +2892,7 @@ app.post('/findPhone', (req, res) => {
 app.post('/routine/add', (req, res) => {
 
   var DeviceID = req.body.DeviceID
-  var HomeID  = req.body.HomeID
+  var HomeID = req.body.HomeID
   var Hours = req.body.Hours
   var Minutes = req.body.Minutes
   var Action = req.body.Action
@@ -2825,17 +2901,17 @@ app.post('/routine/add', (req, res) => {
   var Lat = req.body.Lat
   var Long = req.body.Long
 
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
-    if(Sunrise == true){
+    if (Sunrise == true) {
 
       addSuntoRoutine("sunrise", DeviceID, HomeID, Action, Lat, Long, true, "sunrise")
 
       await insertSun(DeviceID, HomeID, true, false, Action, Lat, Long).then(
-    
+
         res.send({
           message: "Routine added"
-        })).catch( (reject) =>{
+        })).catch((reject) => {
         res.send({
           message: reject
         })
@@ -2843,8 +2919,7 @@ app.post('/routine/add', (req, res) => {
 
 
 
-    }
-    else if(Sunset == true){
+    } else if (Sunset == true) {
 
       addSuntoRoutine("sunset", DeviceID, HomeID, Action, Lat, Long, true, "sunset")
 
@@ -2852,28 +2927,26 @@ app.post('/routine/add', (req, res) => {
 
         res.send({
           message: "Routine added"
-        })).catch( (reject) =>{
+        })).catch((reject) => {
         res.send({
           message: reject
         })
       })
 
-    }
-
-    else{
+    } else {
       await insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, false).then(
-    
+
         res.send({
           message: "Routine added"
-        })).catch( (reject) =>{
+        })).catch((reject) => {
         res.send({
           message: reject
         })
       })
     }
-  
-  }).catch(function(reject){
-    
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
 
@@ -2883,11 +2956,11 @@ app.post('/routine/add', (req, res) => {
 
 app.post('/routine/get', (req, res) => {
 
-  var HomeID  = req.body.HomeID
+  var HomeID = req.body.HomeID
 
   var arr = []
-  
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -2903,7 +2976,7 @@ app.post('/routine/get', (req, res) => {
       const collection = db.collection("routine")
 
       var query = {
-       HomeID: HomeID
+        HomeID: HomeID
       }
 
       collection.find(query).toArray(function (err, result) {
@@ -2915,25 +2988,25 @@ app.post('/routine/get', (req, res) => {
           password: "",
           database: "uhomesql"
         });
-        
-        con.connect(async function(err) {
+
+        con.connect(async function (err) {
           if (err) throw err;
           console.log("Connected!");
 
           await Promise.all(result.map(async (elem) => {
 
             console.log(elem.DeviceID)
-  
+
             var sql = `SELECT * FROM device WHERE DeviceID = ${elem.DeviceID};`
-    
+
             con.query(sql, function (err, sqlresult) {
-              if (err){
+              if (err) {
                 console.log(err)
                 res.send({
                   message: err
                 })
                 return
-              } 
+              }
 
               console.log(sqlresult)
 
@@ -2945,31 +3018,31 @@ app.post('/routine/get', (req, res) => {
 
             });
 
-    
+
           }))
 
-          setTimeout(()=>{
+          setTimeout(() => {
             res.send({
               message: arr
             })
-          },2000)
+          }, 2000)
 
-          
+
 
         });
 
-        
+
       });
 
       client.close();
 
     })
-    
 
-    
-  
-  }).catch(function(reject){
-    
+
+
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
 
@@ -2981,8 +3054,8 @@ app.post('/routine/delete', (req, res) => {
 
   // var HomeID  = req.body.HomeID
   var objectid = req.body._id
-  
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -3016,12 +3089,12 @@ app.post('/routine/delete', (req, res) => {
 
     })
 
-    
 
-    
-  
-  }).catch(function(reject){
-    
+
+
+
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
 
@@ -3036,7 +3109,7 @@ app.post('/delete/home', (req, res) => {
 
   var HomeID = req.body.HomeID
 
-  var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var con = mysql.createConnection({
       host: "127.0.0.1",
@@ -3044,8 +3117,21 @@ app.post('/delete/home', (req, res) => {
       password: "",
       database: "uhomesql"
     });
-    
-    con.connect(function(err) {
+
+    con.connect(function (err) {
+      if (err) throw err;
+      console.log("Connected!");
+      var sql = `SELECT device.DeviceID FROM ((device INNER JOIN room ON device.RoomID = room.RoomID) INNER JOIN home on room.HomeID = home.HomeID) where home.HomeID = 9;`
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          message: err
+        })
+        var arraytoDel = result
+      })
+    })
+
+    con.connect(function (err) {
       if (err) throw err;
       console.log("Connected!");
       var sql = `DELETE FROM home WHERE HomeID = '${HomeID}';`
@@ -3057,7 +3143,7 @@ app.post('/delete/home', (req, res) => {
         res.send({
           message: "Deleted"
         })
-        
+
         MongoClient.connect(uri, {
           useNewUrlParser: true,
           useUnifiedTopology: true
@@ -3070,8 +3156,9 @@ app.post('/delete/home', (req, res) => {
           }
           const db = client.db(dbname)
           const collection = db.collection("setting")
-    
-    
+          const collection2 = db.collection("device")
+
+
           collection.deleteOne({
             HomeID: HomeID
           }, (err, result) => {
@@ -3081,317 +3168,326 @@ app.post('/delete/home', (req, res) => {
               //   "message": "Device Deleted"
               // })
               console.log("Deleted from Devices")
-    
+
             }
           })
 
 
-    
+          collection2.deleteMany({
+            $or: arraytoDel
+          }, (err, result) => {
+            if (err) res.send(err)
+            else {
+              // res.send({
+              //   "message": "Device Deleted"
+              // })
+              console.log("Deleted from Devices")
+
+            }
+          })
+
+
           client.close();
         })
       });
 
     });
 
-  }).catch(function(reject){
-    
+  }).catch(function (reject) {
+
     res.status(401).send(reject.error)
   });
-  })
+})
 
-    app.post('/delete/room', (req, res) => {
+app.post('/delete/room', (req, res) => {
 
-      var RoomID = req.body.RoomID
-    
-      var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
-    
-        var con = mysql.createConnection({
-          host: "127.0.0.1",
-          user: "root",
-          password: "",
-          database: "uhomesql"
-        });
-        
-        con.connect(function(err) {
-          if (err) throw err;
-          console.log("Connected!");
-          var sql = `DELETE FROM room WHERE RoomID = '${RoomID}';`
-    
-          con.query(sql, function (err, result) {
-            if (err) res.send({
-              message: err
-            })
-            res.send({
-              message: "Deleted"
-            })
-          });
-    
-        });
-    
-      }).catch(function(reject){
-        
-        res.status(401).send(reject.error)
-      });
-      })
+  var RoomID = req.body.RoomID
 
-      app.post('/delete/device', (req, res) => {
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
-        var DeviceID = req.body.DeviceID
-      
-        var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
-      
-          var con = mysql.createConnection({
-            host: "127.0.0.1",
-            user: "root",
-            password: "",
-            database: "uhomesql"
-          });
-          
-          con.connect(function(err) {
-            if (err) throw err;
-            console.log("Connected!");
-            var sql = `DELETE FROM device WHERE DeviceID = '${DeviceID}';`
-      
-            con.query(sql, function (err, result) {
-              if (err){
-                res.send({
-                  message: err
-                })
-                return
-              } 
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
 
-              MongoClient.connect(uri, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true
-              }, (err, client) => {
-                if (err) {
-                  console.error(err)
-                  res.send({
-                    error: err
-                  })
-                }
-                const db = client.db(dbname)
-                const collection = db.collection("devices")
-                const collection2 = db.collection("routine")
-          
-          
-                collection.deleteOne({
-                  DeviceID: DeviceID
-                }, (err, result) => {
-                  if (err) res.send(err)
-                  else {
-                    // res.send({
-                    //   "message": "Device Deleted"
-                    // })
-                    console.log("Deleted from Devices")
-          
-                  }
-                })
+    con.connect(function (err) {
+      if (err) throw err;
+      console.log("Connected!");
+      var sql = `DELETE FROM room WHERE RoomID = '${RoomID}';`
 
-                collection2.deleteMany({
-                  DeviceID: DeviceID
-                }, (err, result) => {
-                  if (err) res.send(err)
-                  else {
-                    // res.send({
-                    //   "message": "Device Deleted"
-                    // })
-                    console.log("Deleted from Routine")
-                    res.send({
-                      message: "Deleted"
-                    })
-                  }
-                })
-
-          
-                client.close();
-              })
-            });
-      
-          });
-      
-        }).catch(function(reject){
-          
-          res.status(401).send(reject.error)
-        });
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          message: err
         })
+        res.send({
+          message: "Deleted"
+        })
+      });
 
+    });
 
-        app.post('/delete/userfromhome', (req, res) => {
+  }).catch(function (reject) {
 
-          var HomeID = req.body.HomeID
+    res.status(401).send(reject.error)
+  });
+})
 
-          var UserID = req.body.UserID
-        
-          var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
-        
-            var con = mysql.createConnection({
-              host: "127.0.0.1",
-              user: "root",
-              password: "",
-              database: "uhomesql"
-            });
-            
-            con.connect(function(err) {
-              if (err) throw err;
-              console.log("Connected!");
-              var sql = `DELETE FROM home_user WHERE UserID = '${UserID}' AND HomeID = '${HomeID}' ;`
-        
-              con.query(sql, function (err, result) {
-                if (err) res.send({
-                  message: err
-                })
-                res.send({
-                  message: "Deleted"
-                })
-              });
-        
-            });
-        
-          }).catch(function(reject){
-            
-            res.status(401).send(reject.error)
-          });
-          })
+app.post('/delete/device', (req, res) => {
 
-          app.post('/getAllLightsRoutine', (req, res) => {
+  var DeviceID = req.body.DeviceID
 
-            var HomeID = req.body.HomeID
-          
-            var auth =  authen.isAuthenticated(req.body.idToken).then(async function(resolve){
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
-              getLightsAtHome(HomeID).then((resolve)=>{
-                
-                res.send({
-                  message: resolve
-                })
-              }).catch((reject)=>{
-                res.send({
-                  message: reject
-                })
-              })
-          
-            }).catch(function(reject){
-              
-              res.status(401).send(reject.error)
-            });
-            })
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
 
+    con.connect(function (err) {
+      if (err) throw err;
+      console.log("Connected!");
+      var sql = `DELETE FROM device WHERE DeviceID = '${DeviceID}';`
 
-
-
-
-
-
-  
-  function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, Sun, SunType)
-  {
-
-    return new Promise((resolve,reject)=>{
-
-      if(SunType == "sunrise"){
-        var obj = {
-          DeviceID: DeviceID,
-          HomeID: HomeID,
-          Hours: Hours,
-          Minutes: Minutes,
-          Action: Action,
-          Sun: Sun,
-          Sunrise: true
-        }
-      }
-      else if(SunType == "sunset"){
-        var obj = {
-          DeviceID: DeviceID,
-          HomeID: HomeID,
-          Hours: Hours,
-          Minutes: Minutes,
-          Action: Action,
-          Sun: Sun,
-          Sunset: true
-        }
-      }
-      else{
-        var obj = {
-          DeviceID: DeviceID,
-          HomeID: HomeID,
-          Hours: Hours,
-          Minutes: Minutes,
-          Action: Action,
-          Sun: Sun
-        }
-      }
-
-      
-  
-      MongoClient.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      }, (err, client) => {
+      con.query(sql, function (err, result) {
         if (err) {
-          reject(err)
+          res.send({
+            message: err
+          })
           return
         }
-        const db = client.db(dbname)
-        const collection = db.collection("routine")
-  
-        collection.insertOne(obj, (err, result) => {
-          if (err) reject(err)
-          console.log("Routine added")
-          resolve(result)
-          //else console.log(result)
+
+        MongoClient.connect(uri, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true
+        }, (err, client) => {
+          if (err) {
+            console.error(err)
+            res.send({
+              error: err
+            })
+          }
+          const db = client.db(dbname)
+          const collection = db.collection("devices")
+          const collection2 = db.collection("routine")
+
+
+          collection.deleteOne({
+            DeviceID: DeviceID
+          }, (err, result) => {
+            if (err) res.send(err)
+            else {
+              // res.send({
+              //   "message": "Device Deleted"
+              // })
+              console.log("Deleted from Devices")
+
+            }
+          })
+
+          collection2.deleteMany({
+            DeviceID: DeviceID
+          }, (err, result) => {
+            if (err) res.send(err)
+            else {
+              // res.send({
+              //   "message": "Device Deleted"
+              // })
+              console.log("Deleted from Routine")
+              res.send({
+                message: "Deleted"
+              })
+            }
+          })
+
+
+          client.close();
         })
-        client.close();
+      });
+
+    });
+
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+
+app.post('/delete/userfromhome', (req, res) => {
+
+  var HomeID = req.body.HomeID
+
+  var UserID = req.body.UserID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    var con = mysql.createConnection({
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    con.connect(function (err) {
+      if (err) throw err;
+      console.log("Connected!");
+      var sql = `DELETE FROM home_user WHERE UserID = '${UserID}' AND HomeID = '${HomeID}' ;`
+
+      con.query(sql, function (err, result) {
+        if (err) res.send({
+          message: err
+        })
+        res.send({
+          message: "Deleted"
+        })
+      });
+
+    });
+
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+app.post('/getAllLightsRoutine', (req, res) => {
+
+  var HomeID = req.body.HomeID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    getLightsAtHome(HomeID).then((resolve) => {
+
+      res.send({
+        message: resolve
       })
-
+    }).catch((reject) => {
+      res.send({
+        message: reject
+      })
     })
-  }
 
-  function insertSun(DeviceID, HomeID, Sunrise, Sunset, Action, Lat, Long)
-  {
+  }).catch(function (reject) {
 
-    return new Promise((resolve,reject)=>{
+    res.status(401).send(reject.error)
+  });
+})
 
+
+
+
+
+
+
+
+function insertRoutine(DeviceID, HomeID, Hours, Minutes, Action, Sun, SunType) {
+
+  return new Promise((resolve, reject) => {
+
+    if (SunType == "sunrise") {
       var obj = {
         DeviceID: DeviceID,
         HomeID: HomeID,
-        Sunrise: Sunrise,
-        Sunset: Sunset,
+        Hours: Hours,
+        Minutes: Minutes,
         Action: Action,
-        Lat: Lat,
-        Long: Long
+        Sun: Sun,
+        Sunrise: true
       }
-  
-      MongoClient.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      }, (err, client) => {
-        if (err) {
-          reject(err)
-          return
-        }
-        const db = client.db(dbname)
-        const collection = db.collection("sun")
-  
-        collection.insertOne(obj, (err, result) => {
-          if (err) reject(err)
-          console.log("Sun setting added")
-          resolve(result)
-          //else console.log(result)
-        })
-        client.close();
+    } else if (SunType == "sunset") {
+      var obj = {
+        DeviceID: DeviceID,
+        HomeID: HomeID,
+        Hours: Hours,
+        Minutes: Minutes,
+        Action: Action,
+        Sun: Sun,
+        Sunset: true
+      }
+    } else {
+      var obj = {
+        DeviceID: DeviceID,
+        HomeID: HomeID,
+        Hours: Hours,
+        Minutes: Minutes,
+        Action: Action,
+        Sun: Sun
+      }
+    }
+
+
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("routine")
+
+      collection.insertOne(obj, (err, result) => {
+        if (err) reject(err)
+        console.log("Routine added")
+        resolve(result)
+        //else console.log(result)
       })
-
+      client.close();
     })
-  }
+
+  })
+}
+
+function insertSun(DeviceID, HomeID, Sunrise, Sunset, Action, Lat, Long) {
+
+  return new Promise((resolve, reject) => {
+
+    var obj = {
+      DeviceID: DeviceID,
+      HomeID: HomeID,
+      Sunrise: Sunrise,
+      Sunset: Sunset,
+      Action: Action,
+      Lat: Lat,
+      Long: Long
+    }
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("sun")
+
+      collection.insertOne(obj, (err, result) => {
+        if (err) reject(err)
+        console.log("Sun setting added")
+        resolve(result)
+        //else console.log(result)
+      })
+      client.close();
+    })
+
+  })
+}
 
 
 
 
 
-  app.listen(3000, () => {
-    console.log('Listening on port 3000!')
-  });
+app.listen(3000, () => {
+  console.log('Listening on port 3000!')
+});
 
 
 //////// Check every minute to get routine ///////
@@ -3403,74 +3499,69 @@ MongoClient.connect(uri, {
     console.error(err)
     return
   }
-setInterval(()=>{
-  var time = new Date()
+  setInterval(() => {
+    var time = new Date()
 
-  var hours = ('0'+ (time.getHours())).slice(-2)
-  var mins = ('0' + time.getMinutes()).slice(-2)
+    var hours = ('0' + (time.getHours())).slice(-2)
+    var mins = ('0' + time.getMinutes()).slice(-2)
 
-  console.log("Time: "+ hours + ":" + mins)
+    console.log("Time: " + hours + ":" + mins)
 
-  if(hours == "00" && mins == "00")
-  {
+    if (hours == "00" && mins == "00") {
 
-    deleteSunfromRoutine()
+      deleteSunfromRoutine()
 
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-  
-      const db = client.db(dbname)
-      const collection = db.collection("sun")
-      
-      //res.send(req.params.id)
-      collection.find({}).toArray(async (err, items) => {
-        if (err) console.log(err)
-  
-        console.log("Query result")
-        console.log(items)
-  
-        await Promise.all(items.map(async (elem) => {
-  
-          if(elem.Sunrise == true)
-          {
+      MongoClient.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }, (err, client) => {
+        if (err) {
+          console.error(err)
+          return
+        }
 
-            addSuntoRoutine("sunrise", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
-            
-          }
-          else if(elem.Sunset == true)
-          {
+        const db = client.db(dbname)
+        const collection = db.collection("sun")
 
-            addSuntoRoutine("sunset", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
-            
-          }
-  
-        }))
-  
-        
+        //res.send(req.params.id)
+        collection.find({}).toArray(async (err, items) => {
+          if (err) console.log(err)
+
+          console.log("Query result")
+          console.log(items)
+
+          await Promise.all(items.map(async (elem) => {
+
+            if (elem.Sunrise == true) {
+
+              addSuntoRoutine("sunrise", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
+
+            } else if (elem.Sunset == true) {
+
+              addSuntoRoutine("sunset", elem.DeviceID, elem.HomeID, elem.Action, elem.Lat, elem.Long)
+
+            }
+
+          }))
+
+
+        })
+        client.close();
       })
-      client.close();
-    })
-  }
+    }
 
-  if(hours == "00" && mins == "00")
-  {
+    if (hours == "00" && mins == "00") {
 
-    //smartLearning()
+      //smartLearning()
 
-  }
+    }
 
 
 
-  ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
 
 
-  
+
 
     var query = {
       $and: [{
@@ -3484,7 +3575,7 @@ setInterval(()=>{
 
     const db = client.db(dbname)
     const collection = db.collection("routine")
-    
+
     //res.send(req.params.id)
     collection.find(query).toArray(async (err, items) => {
       if (err) console.log(err)
@@ -3494,50 +3585,45 @@ setInterval(()=>{
 
       await Promise.all(items.map(async (elem) => {
 
-        if(elem.Action == "On")
-        {
-          routine.setLightAPI(elem.DeviceID,elem.HomeID)
-        }
-        else if(elem.Action == "Off")
-        {
-          routine.LightOffAPI(elem.DeviceID,elem.HomeID)
+        if (elem.Action == "On") {
+          routine.setLightAPI(elem.DeviceID, elem.HomeID)
+        } else if (elem.Action == "Off") {
+          routine.LightOffAPI(elem.DeviceID, elem.HomeID)
         }
 
       }))
- 
+
     })
-    
-  
-},60000)
+
+
+  }, 60000)
 
 })
 
-async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long){
+async function addSuntoRoutine(ss, DeviceID, HomeID, Action, Lat, Long) {
 
-            var sunCall = await sun.getSun(Lat, Long)
-            var value
+  var sunCall = await sun.getSun(Lat, Long)
+  var value
 
-            if(ss == "sunrise"){
-              value = sunCall.sunrise
-              var timeArray = await sun.getTime(value).then(async (resolve)=>{
-                await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
-              })
-            } 
-            else if(ss == "sunset"){
-              value = sunCall.sunset
-              var timeArray = await sun.getTime(value).then(async (resolve)=>{
-                await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
-              })
-            } 
+  if (ss == "sunrise") {
+    value = sunCall.sunrise
+    var timeArray = await sun.getTime(value).then(async (resolve) => {
+      await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
+    })
+  } else if (ss == "sunset") {
+    value = sunCall.sunset
+    var timeArray = await sun.getTime(value).then(async (resolve) => {
+      await insertRoutine(DeviceID, HomeID, resolve[0], resolve[1], Action, true, ss)
+    })
+  }
 
-            
+
 
 }
 
-function deleteSunfromRoutine()
-{
+function deleteSunfromRoutine() {
 
-  return new Promise((resolve,reject)=>{
+  return new Promise((resolve, reject) => {
 
     var query = {
       Sun: true
@@ -3567,7 +3653,7 @@ function deleteSunfromRoutine()
 }
 
 
-async function smartLearning(){
+async function smartLearning() {
 
   var date = getDateString()
 
@@ -3589,15 +3675,15 @@ async function smartLearning(){
 
 
     var con = mysql.createConnection({
-    host: "127.0.0.1",
-    user: "root",
-    password: "",
-    database: "uhomesql"
-});
-    
-    con.connect(async function(err) {
+      host: "127.0.0.1",
+      user: "root",
+      password: "",
+      database: "uhomesql"
+    });
+
+    con.connect(async function (err) {
       if (err) console.log(err)
-      con.query("SELECT * FROM home",async function (err, result, fields) {
+      con.query("SELECT * FROM home", async function (err, result, fields) {
         if (err) throw err;
         console.log(result);
 
@@ -3606,8 +3692,7 @@ async function smartLearning(){
           console.log(elem.HomeID)
 
           var query2 = {
-            $and: [
-              {
+            $and: [{
                 HomeID: elem.HomeID.toString()
               },
               {
@@ -3615,14 +3700,13 @@ async function smartLearning(){
               }
             ]
           }
-      
+
           collection2.find(query2).toArray(async function (err, result2) {
             if (err) console.log(err)
 
             console.log(result2)
 
-            if(result2.length != 0)
-            {
+            if (result2.length != 0) {
               await Promise.all(result2.map(async (elem2) => {
 
                 var query = {
@@ -3643,27 +3727,27 @@ async function smartLearning(){
                     }
                   ]
                 }
-          
+
                 collection.find(query).toArray(async function (err, result3) {
                   if (err) throw err;
-  
+
                   //var times = result3.length
-          
+
                   //console.log(result3)
                   //var totalTime = await calculateUserActivity(result3).then(async function (resolve) {
-  
+
                   var data = await smart.statDataPrep(result3)
-          
-                  var resultAvg = await smart.calculateAvg(data)                 
+
+                  var resultAvg = await smart.calculateAvg(data)
                   //console.log(resultAvg/60000)
-  
+
                   var sd = await smart.calculateSD(data)
-  
+
                   console.log("Avg = " + resultAvg)
-                  console.log("SD = "+sd)
-                  console.log("Avg + SD"+(resultAvg+sd))
-                  console.log("Minutes ="+((resultAvg+sd)/60000))
-  
+                  console.log("SD = " + sd)
+                  console.log("Avg + SD" + (resultAvg + sd))
+                  console.log("Minutes =" + ((resultAvg + sd) / 60000))
+
 
 
                   //var sd = await smart.calculateSD(result3, resultAvg, times)
@@ -3673,14 +3757,14 @@ async function smartLearning(){
 
 
                 });
-  
-              }))
-              
-            }
-      
-            
 
-            
+              }))
+
+            }
+
+
+
+
           });
 
 
@@ -3690,13 +3774,13 @@ async function smartLearning(){
     });
   });
 
-    
+
 }
 
 
 
 
-function getDateString(){
+function getDateString() {
   var date = new Date()
 
   var day = ('0' + date.getDate()).slice(-2)
@@ -3709,10 +3793,3 @@ function getDateString(){
 }
 
 smartLearning()
-
-
-
-
-
-
-

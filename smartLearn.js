@@ -152,4 +152,21 @@ module.exports.statDataPrep = function (result) {
   }
 
 
+  module.exports.calculateAverageAll = function (arr1, arr2) {
+    return new Promise((resolve, reject) => {
+  
+      for(let i = 0; i < arr1.length; i++){
+        arr1[i][1] = Number(arr1[i][1])/Number(arr2[i][1])
+
+        console.log(arr1[i][1])
+      }
+
+      console.log(arr1)
+
+      setTimeout(resolve(arr1), 1000)
+  
+    })
+  }
+
+
 
