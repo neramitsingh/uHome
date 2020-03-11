@@ -2127,9 +2127,18 @@ app.post('/setting/get', (req, res) => {
       //res.send(req.params.id)
       collection.find({
         HomeID: HomeID
-      }).toArray((err, items) => {
+      }).toArray(async (err, items) => {
         if (err) res.send(err)
-        else res.send({
+
+        await Promise.all(items.map(async (elem)=>{
+
+          var user = await authen.getUser(elem.UserID)
+
+          elem.name = user.displayName
+        }))
+
+        
+         res.send({
           message: items
         })
       })
