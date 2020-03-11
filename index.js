@@ -2060,15 +2060,21 @@ app.post('/searchLight', (req, res) => {
 })
 
 
-app.post('/api/device/add', (req, res) => {
+app.post('/setting/add', (req, res) => {
+
+
+  var HomeID = req.body.HomeID
+  var Time = req.body.Time
+  var Learn = req.body.Learn
+  var UserID = req.body.UserID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
-    const device = {
-      uid: resolve.uid,
-      name: req.body.name,
-      enabled: true,
-      on: true
+    var option = {
+      HomeID: HomeID,
+      NotiTime: Time,
+      Learn: Learn,
+      UserID: UserID
     }
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -2081,10 +2087,12 @@ app.post('/api/device/add', (req, res) => {
         })
       }
       const db = client.db(dbname)
-      const collection = db.collection("devices")
-      collection.insertOne(device, (err, result) => {
+      const collection = db.collection("setting")
+      collection.insertOne(option, (err, result) => {
         if (err) res.send(err)
-        else res.send(device)
+        else res.send({
+          message: "Add successful"
+        })
       })
 
       client.close();
@@ -2099,25 +2107,12 @@ app.post('/api/device/add', (req, res) => {
 
 });
 
-app.post('/api/device/get', (req, res) => {
+app.post('/setting/get', (req, res) => {
+
+  var HomeID = req.body.HomeID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-    //////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ///////////////////////////////////////////////
+ 
     //console.log(resolve)
     MongoClient.connect(uri, {
       useNewUrlParser: true,
@@ -2128,14 +2123,15 @@ app.post('/api/device/get', (req, res) => {
         return
       }
       const db = client.db(dbname)
-      const collection = db.collection("devices")
-      let id = resolve.uid
+      const collection = db.collection("setting")
       //res.send(req.params.id)
       collection.find({
-        uid: id
+        HomeID: HomeID
       }).toArray((err, items) => {
         if (err) res.send(err)
-        else res.send(items)
+        else res.send({
+          message: items
+        })
       })
       client.close();
     })
@@ -2148,29 +2144,99 @@ app.post('/api/device/get', (req, res) => {
 
 });
 
-//console.error(err)
-app.get('/api/device/:id', (req, res) => {
-  MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }, (err, client) => {
-    if (err) {
-      return
+app.post('/setting/edit', (req, res) => {
+
+
+  var HomeID = req.body.HomeID
+  var Time = req.body.Time
+  var Learn = req.body.Learn
+  var UserID = req.body.UserID
+
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    var option = {
+     $set: {
+      HomeID: HomeID,
+      NotiTime: Time,
+      Learn: Learn,
+      UserID: UserID
     }
-    console.log('Test API')
-    const db = client.db(dbname)
-    const collection = db.collection("devices")
-    let id = req.params.id
-    //res.send(req.params.id)
-    collection.find({
-      uid: id
-    }).toArray((err, items) => {
-      if (err) res.send(err)
-      else res.send(items)
+    }
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("setting")
+      collection.update({
+        HomeID: HomeID
+      },option, (err, result) => {
+        if (err) res.send(err)
+        else res.send({
+          message: "Edit successful"
+        })
+      })
+
+      client.close();
+
     })
-    client.close();
-  })
+
+  }).catch(function (reject) {
+    // console.log(reject)
+    // console.log("I'm back catch")
+    res.status(401).send(reject.error)
+  });
+
 });
+
+app.post('/setting/delete', (req, res) => {
+
+  var HomeID = req.body.HomeID
+  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
+
+    MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }, (err, client) => {
+      if (err) {
+        console.error(err)
+        res.send({
+          error: err
+        })
+      }
+      const db = client.db(dbname)
+      const collection = db.collection("setting")
+
+
+      collection.deleteOne({
+        HomeID: HomeID
+      }, (err, result) => {
+        if (err) res.send(err)
+        else {
+          res.send({
+            "message": "Delete successful"
+          })
+
+        }
+      })
+
+      client.close();
+    })
+
+  }).catch(function (reject) {
+
+    res.status(401).send(reject.error)
+  });
+})
+
+
 
 app.post('/api/toggleswitch', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
@@ -2287,47 +2353,7 @@ app.post('/api/setEnabled', (req, res) => {
 })
 
 
-app.post('/api/device/delete', (req, res) => {
 
-  var deviceId = req.body._id
-  var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
-
-    MongoClient.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }, (err, client) => {
-      if (err) {
-        console.error(err)
-        res.send({
-          error: err
-        })
-      }
-      const db = client.db(dbname)
-      const collection = db.collection("devices")
-
-
-      collection.deleteOne({
-        _id: ObjectId(deviceId)
-      }, (err, result) => {
-        if (err) res.send(err)
-        else {
-          res.send({
-            "message": "Delete successful"
-          })
-
-        }
-      })
-
-      client.close();
-    })
-
-
-
-  }).catch(function (reject) {
-
-    res.status(401).send(reject.error)
-  });
-})
 
 
 
