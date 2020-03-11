@@ -156,7 +156,9 @@ module.exports.statDataPrep = function (result) {
     return new Promise((resolve, reject) => {
   
       for(let i = 0; i < arr1.length; i++){
-        arr1[i][1] = Number(arr1[i][1])/Number(arr2[i][1])
+        var result = Number(arr1[i][1])/Number(arr2[i][1])
+
+        arr1[i][1] = parseFloat(result)
 
         console.log(arr1[i][1])
       }
