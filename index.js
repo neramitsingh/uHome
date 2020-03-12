@@ -1050,11 +1050,14 @@ app.post('/api/starttimer', (req, res) => {
       const collection2 = db.collection("setting")
 
       var timeOut = 1;
+      var settingExists;
 
       collection2.find({
         HomeID: HomeID
       }).toArray((err, items) => {
         if (err) console.log(err)
+
+        settingExists = items.length
 
         if(items.length != 0){
 
@@ -1072,7 +1075,7 @@ app.post('/api/starttimer', (req, res) => {
           objectid = timer._id
           res.status(200).send(timer)
 
-          if(Type == "Bathroom"){
+          if(Type == "Bathroom" && settingExists > 0){
 
             setTimeout(function (timer) {
               console.log('starting')
@@ -1241,6 +1244,7 @@ app.post('/api/getUserActivity', (req, res) => {
 app.post('/api/getUserAverage', (req, res) => {
 
   var HomeID = req.body.HomeID
+  var UserID = req.body.UserID
 
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
@@ -1260,7 +1264,7 @@ app.post('/api/getUserAverage', (req, res) => {
 
       var query = {
         $and: [{
-            uid: id
+            uid: UserID
           },
           {
             current: false
@@ -3603,9 +3607,9 @@ MongoClient.connect(uri, {
       })
     }
 
-    if (hours == "00" && mins == "00") {
+    if (hours == "00" && mins == "10") {
 
-      //smartLearning()
+      smartLearning()
 
     }
 
@@ -3856,5 +3860,3 @@ function getDateString() {
 
   return dateString
 }
-
-smartLearning()
