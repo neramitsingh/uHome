@@ -2075,7 +2075,7 @@ app.post('/setting/add', (req, res) => {
   var auth = authen.isAuthenticated(req.body.idToken).then(async function (resolve) {
 
     var option = {
-      HomeID: HomeID,
+      HomeID: HomeID.toString(),
       NotiTime: Time,
       Learn: Learn,
       UserID: UserID
@@ -2174,6 +2174,7 @@ app.post('/setting/edit', (req, res) => {
       Learn: Learn,
       UserID: UserID
     }
+    
     }
 
     MongoClient.connect(uri, {
