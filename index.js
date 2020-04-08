@@ -2169,12 +2169,12 @@ app.post('/setting/edit', (req, res) => {
 
     var option = {
      $set: {
-      HomeID: HomeID,
+      HomeID: HomeID.toString(),
       NotiTime: Time,
       Learn: Learn,
       UserID: UserID
     }
-    
+
     }
 
     MongoClient.connect(uri, {

@@ -48,30 +48,6 @@ module.exports.calculateAvg = function(arr){
 
     return new Promise((resolve,reject)=>{
 
-        // var total = 0.00;
-        // for(let i = 0; i < arr.length; i++){
-        //     for(let j = 0; j<arr[i].length; j++){
-        //         if(j%2 != 0){
-        //             console.log("Odd")
-        //             console.log(arr[i][j])
-        //             total = total + arr[i][j]
-                    
-        //         }
-        //     }
-            
-        // }
-
-        // setTimeout(()=>{
-
-        // console.log(total)
-
-        // var avg = total/times
-
-        // resolve(avg)
-
-
-        // },1000)
-
         var result = math.mean(arr)
 
 

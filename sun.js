@@ -10,7 +10,6 @@ module.exports.getSun = function (lat, long) {
         // lat = Number(lat)
         // long = Number(long)
 
-    
         var options = {
             hostname: 'api.sunrise-sunset.org',
             path: `/json?lat=${Number(lat)}&lng=${Number(long)}`,
